@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>FilmBooking Payment Testing</title>
+    <script src="https://www.paypal.com/sdk/js?client-id=AcilTXMMlLTASAiyTtnafNaHA9Sa4BcSD1GfeqXixhYYm2cJPbK7TDrk5mpgRVZQFDy2GlguUAG-x0x2&disable-funding=credit,card"></script>
+</head>
+
+<body>
+    <div id="paypal-button-container"></div>
+    <script>
+    paypal.Buttons({
+        style: {
+            color: 'blue',
+            shape: 'pill'
+        },
+
+        createOrder: function (data, actions) {
+            // Set up the transaction
+            return fetch('/api/v1/order', {
+                method: 'post',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    orderId: "",
+                    payerId: "",
+                    userId: 2,
+                    amount: 15,
+                    currency: "USD",
+                    createdAt: new Date(),
+                })
+            })
+            .then(function(res) {
+                console.log("createOrder done");
+                return res.json();
+            })
+            .then(function(data) {
+                console.log(data);
+                return data.orderId; // Same order ID key name as on the server
+            });
+        },
+        onApprove: function (data, actions) {
+            console.log(data);
+            // Capture the funds from the transaction
+            return fetch('/api/v1/approve', {
+                method: 'post',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    orderId: data.orderID,
+                    payerId: data.payerID,
+                    userId: 2,
+                    amount: 15,
+                    currency: "USD",
+                    createdAt: new Date()
+                })
+            })
+            .then(function(res) {
+                return res.json();
+            })
+            .then(function(details) {
+                alert('Transaction approved by ' + details.orderId);
+                return details.id;
+            })
+        },
+        onCancel: function (data) {
+            //
+        }
+    })
+    .render('#paypal-button-container');
+    </script>
+</body>
+</html>
