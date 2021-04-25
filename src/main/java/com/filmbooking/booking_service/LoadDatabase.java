@@ -1,7 +1,7 @@
 package com.filmbooking.booking_service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ class LoadDatabase {
           Long.valueOf(1),
           "USD",
           BigDecimal.valueOf(10),
-          LocalDateTime.now()
+          Instant.now()
       )));
 
       log.info("Preloading " +
@@ -35,7 +35,7 @@ class LoadDatabase {
           Long.valueOf(2),
           "EUR",
           BigDecimal.valueOf(18),
-          LocalDateTime.now()
+          Instant.now()
       )));
     };
   }

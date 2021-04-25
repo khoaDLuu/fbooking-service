@@ -1,7 +1,7 @@
 package com.filmbooking.booking_service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Objects;
 
 import javax.persistence.Entity;
@@ -17,12 +17,12 @@ class Booking {
     private Long userId;
     private String currency;
     private BigDecimal amount;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     Booking() {
     }
 
-    Booking(String orderId, String payerId, Long userId, String currency, BigDecimal amount, LocalDateTime createdAt) {
+    Booking(String orderId, String payerId, Long userId, String currency, BigDecimal amount, Instant createdAt) {
         this.orderId = orderId;
         this.payerId = payerId;
         this.userId = userId;
@@ -48,7 +48,7 @@ class Booking {
     }
 
     public String getPayerId() {
-        return this.orderId;
+        return this.payerId;
     }
 
     public void setPayerId(String payerId) {
@@ -79,11 +79,11 @@ class Booking {
         this.amount = amount;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return this.createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
