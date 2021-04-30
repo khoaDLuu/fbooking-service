@@ -1,34 +1,66 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.models;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Set;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-class Booking {
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "bookings")
+public class Booking implements Serializable {
 
     private @Id @GeneratedValue Long id;
-    private String orderId;
-    private String payerId;
-    private Long userId;
-    private String currency;
-    private BigDecimal amount;
-    private Instant createdAt;
 
-    Booking() {
+    @Column(name = "order_id", nullable = false, unique = true)
+    private String orderId;
+
+    @Column(name = "payer_id", nullable = false)
+    private String payerId;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "currency")
+    private String currency;
+
+    @Column(name = "amount", nullable = false)
+    private BigDecimal amount;
+
+    @Column(name = "created_at", updatable = false)
+    private @CreatedDate Instant createdAt;
+
+    @Column(name = "updated_at")
+    private @LastModifiedDate Instant updatedAt;
+
+    @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<Ticket> tickets;
+
+    public Booking() {
     }
 
-    Booking(String orderId, String payerId, Long userId, String currency, BigDecimal amount, Instant createdAt) {
+    public Booking(String orderId, String payerId, Long userId,
+                   String currency, BigDecimal amount) {
         this.orderId = orderId;
         this.payerId = payerId;
         this.userId = userId;
         this.currency = currency;
         this.amount = amount;
-        this.createdAt = createdAt;
     }
 
     public Long getId() {
@@ -87,6 +119,14 @@ class Booking {
         this.createdAt = createdAt;
     }
 
+    public Instant getUpdatedAt() {
+        return this.updatedAt;
+    }
+
+    public void setupdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     @Override
     public boolean equals(Object o) {
 
@@ -102,7 +142,8 @@ class Booking {
             && Objects.equals(this.userId, booking.userId)
             && Objects.equals(this.currency, booking.currency)
             && Objects.equals(this.amount, booking.amount)
-            && Objects.equals(this.createdAt, booking.createdAt);
+            && Objects.equals(this.createdAt, booking.createdAt)
+            && Objects.equals(this.updatedAt, booking.updatedAt);
     }
 
     @Override
@@ -110,7 +151,8 @@ class Booking {
         return Objects.hash(
             this.id,
             this.orderId, this.payerId,
-            this.userId, this.currency, this.amount, this.createdAt
+            this.userId, this.currency, this.amount,
+            this.createdAt, this.updatedAt
         );
     }
 
@@ -122,6 +164,7 @@ class Booking {
             "payerId=" + this.payerId + "\', " +
             "userId='" + this.userId + "\', " +
             "total=" + this.amount + " " + this.currency + "\', " +
-            "createdAt='" + this.createdAt + '}';
+            "createdAt=" + this.createdAt + "\', " +
+            "updatedAt='" + this.updatedAt + '}';
     }
 }

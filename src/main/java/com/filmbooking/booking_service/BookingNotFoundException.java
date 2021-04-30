@@ -1,6 +1,6 @@
 package com.filmbooking.booking_service;
 
-class BookingNotFoundException extends RuntimeException {
+public class BookingNotFoundException extends RuntimeException {
 
     /**
      *

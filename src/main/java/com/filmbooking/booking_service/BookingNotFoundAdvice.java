@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
-class BookingNotFoundAdvice {
+public class BookingNotFoundAdvice {
 
   @ResponseBody
   @ExceptionHandler(BookingNotFoundException.class)
