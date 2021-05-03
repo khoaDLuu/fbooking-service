@@ -3,8 +3,8 @@ package com.filmbooking.booking_service.models;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -48,19 +48,20 @@ public class Booking implements Serializable {
     @Column(name = "updated_at")
     private @LastModifiedDate Instant updatedAt;
 
-    @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private Set<Ticket> tickets;
+    @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Ticket> tickets;
 
     public Booking() {
     }
 
     public Booking(String orderId, String payerId, Long userId,
-                   String currency, BigDecimal amount) {
+                   String currency, BigDecimal amount, List<Ticket> tickets) {
         this.orderId = orderId;
         this.payerId = payerId;
         this.userId = userId;
         this.currency = currency;
         this.amount = amount;
+        this.tickets = tickets;
     }
 
     public Long getId() {
@@ -109,6 +110,14 @@ public class Booking implements Serializable {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public List<Ticket> getTickets() {
+        return this.tickets;
+    }
+
+    public void setTickets(List<Ticket> tickets) {
+        this.tickets = tickets;
     }
 
     public Instant getCreatedAt() {

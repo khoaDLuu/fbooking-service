@@ -23,11 +23,18 @@
                     'content-type': 'application/json'
                 },
                 body: JSON.stringify({
-                    orderId: "",
-                    payerId: "",
                     userId: 2,
-                    amount: 15,
                     currency: "USD",
+                    tickets: [
+                        {
+                            seatNumber: "A4",
+                            price: 15.0
+                        },
+                        {
+                            seatNumber: "A5",
+                            price: 15.0
+                        },
+                    ],
                 })
             })
             .then(function(res) {
@@ -53,6 +60,17 @@
                     userId: 2,
                     amount: 15,
                     currency: "USD",
+                    tickets: [
+                        {
+                            // Use UUID to prevent violation of db constraints, for demo purposes only
+                            seatNumber: uuid.v4(), // INSERT SEAT_NUMBER HERE, e.g. "A4"
+                            screeningId: 7 // INSERT SCREENING_ID HERE
+                        },
+                        {
+                            seatNumber: uuid.v4(),
+                            screeningId: 7
+                        },
+                    ],
                 })
             })
             .then(function(res) {

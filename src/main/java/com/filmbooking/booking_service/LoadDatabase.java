@@ -1,7 +1,7 @@
 package com.filmbooking.booking_service;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.filmbooking.booking_service.models.Booking;
+import com.filmbooking.booking_service.models.Ticket;
 
 @Configuration
 class LoadDatabase {
@@ -27,7 +28,8 @@ class LoadDatabase {
           "NON9niniwn4b",
           Long.valueOf(1),
           "USD",
-          BigDecimal.valueOf(10)
+          BigDecimal.valueOf(10),
+          new ArrayList<Ticket>()
       )));
 
       log.info("Preloading " +
@@ -36,7 +38,8 @@ class LoadDatabase {
           "jnfsiV7BB2INKn",
           Long.valueOf(2),
           "EUR",
-          BigDecimal.valueOf(18)
+          BigDecimal.valueOf(18),
+          new ArrayList<Ticket>()
       )));
     };
   }

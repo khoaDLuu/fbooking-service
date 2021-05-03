@@ -128,11 +128,10 @@ class BookingController {
                     // Here you can insert order into database
                 }
             }
+            booking.getTickets().forEach(ticket -> ticket.setBooking(booking));
+            repository.save(booking);
+            return response;
         }
-
-        repository.save(booking);
-        return response;
-    }
 
     /**
      * Creating empty body for capture request. You can set the payment source if

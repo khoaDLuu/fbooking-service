@@ -13,6 +13,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -39,7 +41,8 @@ public class Ticket implements Serializable {
     @Column(name = "updated_at")
     private @LastModifiedDate Instant updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name ="booking_id", nullable = false)
     private Booking booking;
 
@@ -96,7 +99,7 @@ public class Ticket implements Serializable {
         return this.updatedAt;
     }
 
-    public void setUpdateAt(Instant updatedAt) {
+    public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }
 
