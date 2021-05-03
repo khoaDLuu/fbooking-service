@@ -43,11 +43,14 @@ class BookingController {
     }
 
     @PostMapping("api/v1/order")
-    Booking createOrder(@RequestBody Booking booking) throws IOException {
+    PaypalResponse createOrder(@RequestBody PaypalRequest ppReq) throws IOException {
 
         OrdersCreateRequest request = new OrdersCreateRequest();
         request.prefer("return=representation");
-        request.requestBody(buildRequestBody(booking.getAmount()));
+        request.requestBody(buildRequestBody(
+            ppReq.total(),
+            ppReq.getCurrency()
+        ));
 
         // Call PayPal to set up a transaction
         HttpResponse<Order> response = this.paypal.client().execute(request);
@@ -66,8 +69,14 @@ class BookingController {
                             + " " + response.result().purchaseUnits().get(0).amountWithBreakdown().value());
         }
 
-        booking.setOrderId(response.result().id());
-        return booking;
+        return new PaypalResponse(
+            response.result().id(),
+            response.result().purchaseUnits().get(0)
+                .amountWithBreakdown().value() + " " +
+                response.result().purchaseUnits().get(0)
+                    .amountWithBreakdown().currencyCode(),
+            response.result().createTime()
+        );
     }
 
     @PostMapping("api/v1/approve")
@@ -135,7 +144,10 @@ class BookingController {
         return new OrderRequest();
     }
 
-    private OrderRequest buildRequestBody(BigDecimal amount) {
+    private OrderRequest buildRequestBody(
+        BigDecimal amount,
+        String currency
+    ) {
         OrderRequest orderRequest = new OrderRequest();
         orderRequest.checkoutPaymentIntent("CAPTURE");
 
