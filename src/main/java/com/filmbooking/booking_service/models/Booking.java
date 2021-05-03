@@ -168,12 +168,13 @@ public class Booking implements Serializable {
     @Override
     public String toString() {
         return "Booking{" +
-            "id=" + this.id + "\', " +
-            "orderId=" + this.orderId + "\', " +
-            "payerId=" + this.payerId + "\', " +
-            "userId='" + this.userId + "\', " +
-            "total=" + this.amount + " " + this.currency + "\', " +
-            "createdAt=" + this.createdAt + "\', " +
-            "updatedAt='" + this.updatedAt + '}';
+            "id=" + this.id + ", " +
+            "orderId=\'" + this.orderId + "\', " +
+            "payerId=\'" + this.payerId + "\', " +
+            "userId=\'" + this.userId + "\', " +
+            "total=\'" + this.amount + " " + this.currency + "\', " +
+            "tickets=\'" + this.tickets + "\', " +
+            "createdAt=\'" + this.createdAt + "\', " +
+            "updatedAt=\'" + this.updatedAt + "\'}";
     }
 }

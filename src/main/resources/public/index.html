@@ -8,6 +8,8 @@
 
 <body>
     <div id="paypal-button-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js" integrity="sha512-UNM1njAgOFUa74Z0bADwAq8gbTcqZC8Ej4xPSzpnh0l6KMevwvkBvbldF9uR++qKeJ+MOZHRjV1HZjoRvjDfNQ==" crossorigin="anonymous"></script>
     <script>
     paypal.Buttons({
         style: {
@@ -16,6 +18,9 @@
         },
 
         createOrder: function (data, actions) {
+            // DEBUG
+            console.log('-- STEP 0 --');
+            console.log(data);
             // Set up the transaction
             return fetch('/api/v1/order', {
                 method: 'post',
@@ -38,15 +43,20 @@
                 })
             })
             .then(function(res) {
-                console.log("createOrder done");
+                // DEBUG
+                console.log("Set up order successfully.");
                 return res.json();
             })
             .then(function(data) {
+                // DEBUG
+                console.log('-- STEP 1 --');
                 console.log(data);
                 return data.orderId; // Same order ID key name as on the server
             });
         },
         onApprove: function (data, actions) {
+            // DEBUG
+            console.log('-- STEP 2 --');
             console.log(data);
             // Capture the funds from the transaction
             return fetch('/api/v1/approve', {
@@ -57,8 +67,8 @@
                 body: JSON.stringify({
                     orderId: data.orderID,
                     payerId: data.payerID,
-                    userId: 2,
-                    amount: 15,
+                    userId: 5, // INSERT USER_ID HERE
+                    amount: 20, // INSERT CHARGE HERE
                     currency: "USD",
                     tickets: [
                         {
@@ -74,10 +84,18 @@
                 })
             })
             .then(function(res) {
+                // DEBUG
+                console.log("Finish transaction successfully.");
                 return res.json();
             })
             .then(function(details) {
-                alert('Transaction approved by ' + details.orderId);
+                // DEBUG
+                console.log('-- STEP 3 --');
+                console.log(details);
+                alert(
+                    'Transaction approved by ' + details.orderId +
+                    '\nBooking ID is ' + details.id
+                );
                 return details.id;
             })
         },

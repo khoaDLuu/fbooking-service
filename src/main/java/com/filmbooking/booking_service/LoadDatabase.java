@@ -25,7 +25,7 @@ class LoadDatabase {
       log.info("Preloading " +
         repository.save(new Booking(
           UUID.randomUUID().toString().replace("-", ""),
-          "NON9niniwn4b",
+          UUID.randomUUID().toString().replace("-", ""),
           Long.valueOf(1),
           "USD",
           BigDecimal.valueOf(10),
@@ -35,7 +35,7 @@ class LoadDatabase {
       log.info("Preloading " +
         repository.save(new Booking(
           UUID.randomUUID().toString().replace("-", ""),
-          "jnfsiV7BB2INKn",
+          UUID.randomUUID().toString().replace("-", ""),
           Long.valueOf(2),
           "EUR",
           BigDecimal.valueOf(18),
