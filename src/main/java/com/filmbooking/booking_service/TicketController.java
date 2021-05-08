@@ -26,16 +26,18 @@ class TicketController {
         response = Ticket.class,
         responseContainer = "List"
     )
-    List<Ticket> all(
+    ResponseWrapper<Ticket> all(
         @RequestParam(value = "screening_id", required = false)
         String screening_id
     ) {
+        List<Ticket> unwrapped = null;
         if (screening_id != null) {
-            return repository.findByScreening(Long.parseLong(screening_id));
+            unwrapped = repository.findByScreening(Long.parseLong(screening_id));
         }
         else {
-            return repository.findAll();
+            unwrapped = repository.findAll();
         }
+        return new ResponseWrapper<Ticket>(unwrapped);
     }
 
     @GetMapping("/tickets/{id}")
