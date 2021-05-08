@@ -2,12 +2,8 @@ package com.filmbooking.booking_service;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,30 +38,8 @@ class TicketController {
         }
     }
 
-    @PostMapping("/tickets")
-    Ticket newTicket(@RequestBody Ticket newTicket) {
-        return repository.save(newTicket);
-    }
-
     @GetMapping("/tickets/{id}")
     Ticket one(@PathVariable Long id) {
         return repository.findById(id).orElseThrow(() -> new TicketNotFoundException(id));
-    }
-
-    @PutMapping("/tickets/{id}")
-    Ticket updateTicket(@RequestBody Ticket newTicket, @PathVariable Long id) {
-        return repository.findById(id).map(ticket -> {
-            ticket.setBooking(newTicket.getBooking());
-            ticket.setScreeningId(newTicket.getScreeningId());
-            ticket.setSeatNumber(newTicket.getSeatNumber());
-            return repository.save(ticket);
-        }).orElseGet(() -> {
-            return repository.save(newTicket);
-        });
-    }
-
-    @DeleteMapping("/tickets/{id}")
-    void deleteTicket(@PathVariable Long id) {
-        repository.deleteById(id);
     }
 }

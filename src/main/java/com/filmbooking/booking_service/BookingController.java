@@ -209,10 +209,9 @@ class BookingController {
             booking.setUserId(newBooking.getUserId());
             booking.setCurrency(newBooking.getCurrency());
             booking.setAmount(newBooking.getAmount());
-            booking.setCreatedAt(newBooking.getCreatedAt());
             return repository.save(booking);
         }).orElseGet(() -> {
-            newBooking.setId(id);
+            // newBooking.setId(id);
             return repository.save(newBooking);
         });
     }
