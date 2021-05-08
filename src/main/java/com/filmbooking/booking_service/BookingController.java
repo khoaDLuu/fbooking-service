@@ -42,7 +42,39 @@ class BookingController {
         this.repository = repository;
     }
 
-    @PostMapping("api/v1/order")
+    private OrderRequest buildRequestBody() {
+        return new OrderRequest();
+    }
+
+    private OrderRequest buildRequestBody(
+        BigDecimal amount,
+        String currency
+    ) {
+        OrderRequest orderRequest = new OrderRequest();
+        orderRequest.checkoutPaymentIntent("CAPTURE");
+
+        ApplicationContext applicationContext = new ApplicationContext()
+            .brandName("FILMBOOKING")
+            .landingPage("BILLING");
+        orderRequest.applicationContext(applicationContext);
+
+        List<PurchaseUnitRequest> purchaseUnitRequests =
+            new ArrayList<PurchaseUnitRequest>();
+        PurchaseUnitRequest purchaseUnitRequest = new PurchaseUnitRequest()
+            .referenceId("PUHF")
+            .description("Film Tickets")
+            .softDescriptor("FBT")
+            .amountWithBreakdown(
+                new AmountWithBreakdown()
+                .currencyCode(currency)
+                .value(amount.toString())
+            );
+        purchaseUnitRequests.add(purchaseUnitRequest);
+        orderRequest.purchaseUnits(purchaseUnitRequests);
+        return orderRequest;
+    }
+
+    @PostMapping("booking/prepare")
     PaypalResponse createOrder(@RequestBody PaypalRequest ppReq) throws IOException {
 
         OrdersCreateRequest request = new OrdersCreateRequest();
@@ -91,7 +123,7 @@ class BookingController {
         );
     }
 
-    @PostMapping("api/v1/approve")
+    @PostMapping("booking/confirm")
     Booking approveOrder(@RequestBody Booking booking) throws IOException {
         OrdersGetRequest request = new OrdersGetRequest(booking.getOrderId());
 
@@ -149,52 +181,10 @@ class BookingController {
         }
     }
 
-    private OrderRequest buildRequestBody() {
-        return new OrderRequest();
-    }
-
-    private OrderRequest buildRequestBody(
-        BigDecimal amount,
-        String currency
-    ) {
-        OrderRequest orderRequest = new OrderRequest();
-        orderRequest.checkoutPaymentIntent("CAPTURE");
-
-        ApplicationContext applicationContext = new ApplicationContext()
-            .brandName("FILMBOOKING")
-            .landingPage("BILLING");
-        orderRequest.applicationContext(applicationContext);
-
-        List<PurchaseUnitRequest> purchaseUnitRequests =
-            new ArrayList<PurchaseUnitRequest>();
-        PurchaseUnitRequest purchaseUnitRequest = new PurchaseUnitRequest()
-            .referenceId("PUHF")
-            .description("Film Tickets")
-            .softDescriptor("FBT")
-            .amountWithBreakdown(
-                new AmountWithBreakdown()
-                .currencyCode(currency)
-                .value(amount.toString())
-            );
-        purchaseUnitRequests.add(purchaseUnitRequest);
-        orderRequest.purchaseUnits(purchaseUnitRequests);
-        return orderRequest;
-    }
-
-    // Aggregate root
-    // tag::get-aggregate-root[]
     @GetMapping("/bookings")
     List<Booking> all() {
         return repository.findAll();
     }
-    // end::get-aggregate-root[]
-
-    @PostMapping("/bookings")
-    Booking newBooking(@RequestBody Booking newBooking) {
-        return repository.save(newBooking);
-    }
-
-    // Single item
 
     @GetMapping("/bookings/{id}")
     Booking one(@PathVariable Long id) {
@@ -204,7 +194,7 @@ class BookingController {
 
     @PutMapping("/bookings/{id}")
     Booking replaceBooking(@RequestBody Booking newBooking, @PathVariable Long id) {
-
+        // Note: Use case: when the user cancel a booking ?
         return repository.findById(id).map(booking -> {
             booking.setUserId(newBooking.getUserId());
             booking.setCurrency(newBooking.getCurrency());
