@@ -17,6 +17,10 @@ jobs:
         java-version: 11
     - name: Maven Build
       env:
+        PORT: ${{ secrets.PORT }}
+        CONFIG_SERVER_URL: ${{ secrets.CONFIG_SERVER_URL }}
+        SERVICE_DISCOVERER_URL: ${{ secrets.SERVICE_DISCOVERER_URL }}
+        SPRING_PROFILES_ACTIVE: ${{ secrets.SPRING_PROFILES_ACTIVE }}
         PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
         PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
       run: mvn -B package --file pom.xml

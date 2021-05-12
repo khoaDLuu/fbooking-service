@@ -1,0 +1,15 @@
+spring.jpa:
+    properties.hibernate.dialect: org.hibernate.dialect.PostgreSQL92Dialect
+    hibernate.ddl-auto: update
+
+server:
+    port: ${PORT}
+
+spring:
+    application.name: booking-service
+    config.import: optional:configserver:${CONFIG_SERVER_URL}
+
+eureka.client:
+    region: default
+    registryFetchIntervalSeconds: 30
+    serviceUrl.defaultZone: ${SERVICE_DISCOVERER_URL}/eureka/

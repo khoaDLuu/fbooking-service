@@ -57,5 +57,7 @@ build/
 ### VS Code ###
 .vscode/
 
-application-dev.properties
+*-dev.properties
 application.properties
+*-dev.yml
+application.yml

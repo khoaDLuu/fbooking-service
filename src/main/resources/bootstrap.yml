@@ -1,0 +1,12 @@
+server:
+  port: ${PORT}
+
+spring:
+  application.name: booking-service
+  cloud.config:
+    discovery.enabled: true
+    enabled: true
+    name: booking-service
+    uri: ${CONFIG_SERVER_URL}
+
+eureka.client.serviceUrl.defaultZone: ${SERVICE_DISCOVERER_URL}/eureka/
