@@ -18,6 +18,7 @@ import com.paypal.orders.OrdersGetRequest;
 import com.paypal.orders.PurchaseUnit;
 import com.paypal.orders.PurchaseUnitRequest;
 
+import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
@@ -150,34 +151,47 @@ class BookingController {
 
     @Transactional
     public HttpResponse<Order> captureOrder(Booking booking) throws IOException {
-        OrdersCaptureRequest request = new OrdersCaptureRequest(booking.getOrderId());
-        request.requestBody(buildRequestBody());
+        try {
+            OrdersCaptureRequest request = new OrdersCaptureRequest(booking.getOrderId());
+            request.requestBody(buildRequestBody());
 
-        // Call PayPal to capture an order
-        HttpResponse<Order> response = paypal.client().execute(request);
+            // Call PayPal to capture an order
+            HttpResponse<Order> response = paypal.client().execute(request);
 
-        if (response.statusCode() == HttpStatus.CREATED.value()) {
-            for (PurchaseUnit purchaseUnit : response.result().purchaseUnits()) {
-                purchaseUnit.amountWithBreakdown();
-                for (Capture capture : purchaseUnit.payments().captures()) {
-                    // ############## DEBUG ############## //
-                    System.out.println(
-                        "CaptureOrder - id: " +
-                        capture.id()
-                    );
-                    System.out.println(
-                        "CaptureOrder - amount: " +
-                        Double.parseDouble(capture.amount().value())
-                    );
-                    // ############## DEBUG ############## //
+            if (response.statusCode() == HttpStatus.CREATED.value()) {
+                for (PurchaseUnit purchaseUnit : response.result().purchaseUnits()) {
+                    purchaseUnit.amountWithBreakdown();
+                    for (Capture capture : purchaseUnit.payments().captures()) {
+                        // ############## DEBUG ############## //
+                        System.out.println(
+                            "CaptureOrder - id: " +
+                            capture.id()
+                        );
+                        System.out.println(
+                            "CaptureOrder - amount: " +
+                            Double.parseDouble(capture.amount().value())
+                        );
+                        // ############## DEBUG ############## //
+                    }
                 }
+                booking.getTickets().forEach(ticket -> ticket.setBooking(booking));
+                try {
+                    repository.save(booking);
+                }
+                catch (Exception ex) {
+                    throw new PSQLException(
+                        ((PSQLException) ex).getServerErrorMessage(),
+                        true
+                    );
+                }
+                return response;
             }
-            booking.getTickets().forEach(ticket -> ticket.setBooking(booking));
-            repository.save(booking);
-            return response;
+            else {
+                return null; // TODO : throw Exception
+            }
         }
-        else {
-            return null; // TODO : throw Exception
+        catch (PSQLException sqlEx) {
+            throw new ConstraintViolationException(sqlEx.getMessage());
         }
     }
 
