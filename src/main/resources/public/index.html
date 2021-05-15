@@ -22,7 +22,7 @@
             console.log('-- STEP 0 --');
             console.log(data);
             // Set up the transaction
-            return fetch('/booking/prepare', {
+            return fetch('/bookings/prepare', {
                 method: 'post',
                 headers: {
                     'content-type': 'application/json'
@@ -59,7 +59,7 @@
             console.log('-- STEP 2 --');
             console.log(data);
             // Capture the funds from the transaction
-            return fetch('/booking/confirm', {
+            return fetch('/bookings/confirm', {
                 method: 'post',
                 headers: {
                     'content-type': 'application/json'

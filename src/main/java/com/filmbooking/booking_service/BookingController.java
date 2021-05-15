@@ -74,7 +74,7 @@ class BookingController {
         return orderRequest;
     }
 
-    @PostMapping("booking/prepare")
+    @PostMapping("/bookings/prepare")
     PaypalResponse createOrder(@RequestBody PaypalRequest ppReq) throws IOException {
 
         OrdersCreateRequest request = new OrdersCreateRequest();
@@ -123,7 +123,7 @@ class BookingController {
         );
     }
 
-    @PostMapping("booking/confirm")
+    @PostMapping("/bookings/confirm")
     Booking approveOrder(@RequestBody Booking booking) throws IOException {
         OrdersGetRequest request = new OrdersGetRequest(booking.getOrderId());
 
