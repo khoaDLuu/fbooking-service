@@ -25,7 +25,8 @@
             return fetch('/bookings/prepare', {
                 method: 'post',
                 headers: {
-                    'content-type': 'application/json'
+                    'content-type': 'application/json',
+                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbjEiLCJyb2xlcyI6IlJPTEVfQURNSU4iLCJpZCI6MzksInBlcm1pc3Npb24iOnsiMSI6IkNSRUFURSIsIjIiOiJSRUFEIiwiMyI6IlVQREFURSIsIjQiOiJERUxFVEUifSwiaWF0IjoxNjIxMTQ5ODM0LCJleHAiOjE2MjEyMzYyMzR9.q20tUg2p9g338zAnmfcGl0koSd8iPVJSPEVVVmCG80k'
                 },
                 body: JSON.stringify({
                     userId: 2,
@@ -62,12 +63,14 @@
             return fetch('/bookings/confirm', {
                 method: 'post',
                 headers: {
-                    'content-type': 'application/json'
+                    'content-type': 'application/json',
+                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbjEiLCJyb2xlcyI6IlJPTEVfQURNSU4iLCJpZCI6MzksInBlcm1pc3Npb24iOnsiMSI6IkNSRUFURSIsIjIiOiJSRUFEIiwiMyI6IlVQREFURSIsIjQiOiJERUxFVEUifSwiaWF0IjoxNjIxMTQ5ODM0LCJleHAiOjE2MjEyMzYyMzR9.q20tUg2p9g338zAnmfcGl0koSd8iPVJSPEVVVmCG80k'
                 },
                 body: JSON.stringify({
                     orderId: data.orderID,
                     payerId: data.payerID,
                     userId: 5, // INSERT USER_ID HERE
+                    userEmail: "dangkhoa240899@gmail.com", // INSERT USER_EMAIL HERE
                     amount: 20, // INSERT CHARGE HERE
                     currency: "USD",
                     tickets: [

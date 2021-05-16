@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
 import com.paypal.http.HttpResponse;
 import com.paypal.orders.AmountWithBreakdown;
 import com.paypal.orders.ApplicationContext;
@@ -21,6 +23,7 @@ import com.paypal.orders.PurchaseUnitRequest;
 import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +32,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import reactor.core.publisher.Mono;
 
 import com.filmbooking.booking_service.models.Booking;
 
@@ -125,7 +133,11 @@ class BookingController {
     }
 
     @PostMapping("/bookings/confirm")
-    Booking approveOrder(@RequestBody Booking booking) throws IOException {
+    Booking approveOrder(
+        @RequestBody Booking booking,
+        HttpServletRequest req
+    ) throws IOException {
+        String authHeader = req.getHeader("Authorization");
         OrdersGetRequest request = new OrdersGetRequest(booking.getOrderId());
 
         // Call PayPal to get the transaction
@@ -138,6 +150,13 @@ class BookingController {
                 // ############## DEBUG ############## //
                 System.out.println("Order ID: " + response.result().id());
                 // ############## DEBUG ############## //
+
+                this.sendCodeForQR(
+                    booking.getCode(),
+                    authHeader,
+                    booking.getUserEmail()
+                );
+
                 return booking;
             }
             else {
@@ -147,6 +166,45 @@ class BookingController {
         else {
             return null; // TODO : throw Exception
         }
+    }
+
+    private void sendCodeForQR(String code, String auth, String emailTo) {
+        // send code for QR; System.getenv("MANAGEMENT_SITE_URL")
+        WebClient apiClient = WebClient.create(
+            System.getenv("QR_MAIL_URL_BASE")
+        );
+        String bodyContent = String.format(
+            "{\"mailFrom\":\"%s\"," +
+            "\"mailTo\":\"%s\"," +
+            "\"embeddedlink\":\"%s?code=%s\"}",
+            System.getenv("EMAIL_DEFAULT"),
+            emailTo,
+            System.getenv("MANAGEMENT_SITE_URL"), code
+        );
+
+        // ############## DEBUG ############## //
+        System.out.println(
+            "QR_MAIL_URL: " +
+            System.getenv("QR_MAIL_URL_BASE") +
+            System.getenv("QR_MAIL_URL_PATH")
+        );
+        System.out.println("EMAIL_DEFAULT: " + System.getenv("EMAIL_DEFAULT"));
+        System.out.println(
+            "MANAGEMENT_SITE_URL: " +
+            System.getenv("MANAGEMENT_SITE_URL")
+        );
+        System.out.println("Body content: " + bodyContent);
+        // ############## DEBUG ############## //
+
+        String res = apiClient.post()
+            .uri(System.getenv("QR_MAIL_URL_PATH"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("Authorization", auth)
+            .body(BodyInserters.fromValue(bodyContent))
+            .retrieve()
+            .bodyToMono(String.class)
+            .block();
+        System.out.println("Result here: " + res);
     }
 
     @Transactional
