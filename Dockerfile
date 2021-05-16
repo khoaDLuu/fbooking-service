@@ -14,9 +14,9 @@ RUN chown keith /app
 USER keith:filmbooking
 WORKDIR /app
 
-ADD target/booking_service-0.0.1-SNAPSHOT.jar \
-    /app/booking_service-0.0.1-SNAPSHOT.jar
+ADD target/booking_service-1.0.0.jar \
+    /app/booking_service-1.0.0.jar
 
 CMD java -Xms256m -Xmx256m -Xss512k -XX:+UseContainerSupport \
         -Dserver.port=$PORT $JAVA_OPTS \
-        -jar /app/booking_service-0.0.1-SNAPSHOT.jar
+        -jar /app/booking_service-1.0.0.jar
