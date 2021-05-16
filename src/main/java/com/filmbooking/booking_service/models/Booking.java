@@ -15,8 +15,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.PrePersist;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
+import org.hibernate.annotations.Type;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -45,6 +48,12 @@ public class Booking implements Serializable {
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
 
+    // @GeneratedValue(strategy = GenerationType.AUTO)
+    // @Type(type = "uuid-char")
+    // @Column(name = "code", columnDefinition = "VARCHAR(255) default '0000-0000'")
+    @Column(name = "code")
+    private String code;
+
     @Column(name = "created_at", updatable = false)
     private @CreatedDate Instant createdAt;
 
@@ -54,20 +63,30 @@ public class Booking implements Serializable {
     @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets;
 
+    @Transient
+    private String userEmail;
+
+    @PrePersist
+    protected void onCreate() {
+        this.setCode(java.util.UUID.randomUUID().toString());
+    }
+
     public Booking() {
     }
 
-    public Booking(String orderId, String payerId, Long userId,
-                   String currency, BigDecimal amount, List<Ticket> tickets) {
+    public Booking(String orderId, String payerId,
+            Long userId, String userEmail,
+            String currency, BigDecimal amount, List<Ticket> tickets) {
         this.orderId = orderId;
         this.payerId = payerId;
         this.userId = userId;
+        this.userEmail = userEmail;
         this.currency = currency;
         this.amount = amount;
         this.tickets = tickets;
     }
 
-    public Long getId() {
+   public Long getId() {
         return this.id;
     }
 
@@ -99,6 +118,14 @@ public class Booking implements Serializable {
         this.userId = userId;
     }
 
+    public String getUserEmail() {
+        return this.userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
     public String getCurrency() {
         return this.currency;
     }
@@ -113,6 +140,14 @@ public class Booking implements Serializable {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public String getCode() {
+        return this.code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public List<Ticket> getTickets() {
@@ -154,6 +189,7 @@ public class Booking implements Serializable {
             && Objects.equals(this.userId, booking.userId)
             && Objects.equals(this.currency, booking.currency)
             && Objects.equals(this.amount, booking.amount)
+            && Objects.equals(this.code, booking.code)
             && Objects.equals(this.createdAt, booking.createdAt)
             && Objects.equals(this.updatedAt, booking.updatedAt);
     }
@@ -161,9 +197,8 @@ public class Booking implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(
-            this.id,
-            this.orderId, this.payerId,
-            this.userId, this.currency, this.amount,
+            this.id, this.orderId, this.payerId, this.userId,
+            this.currency, this.amount, this.code,
             this.createdAt, this.updatedAt
         );
     }
@@ -176,6 +211,7 @@ public class Booking implements Serializable {
             "payerId=\'" + this.payerId + "\', " +
             "userId=\'" + this.userId + "\', " +
             "total=\'" + this.amount + " " + this.currency + "\', " +
+            "code=\'" + this.code + "\', " +
             "tickets=\'" + this.tickets + "\', " +
             "createdAt=\'" + this.createdAt + "\', " +
             "updatedAt=\'" + this.updatedAt + "\'}";

@@ -27,6 +27,7 @@ class LoadDatabase {
           UUID.randomUUID().toString().replace("-", ""),
           UUID.randomUUID().toString().replace("-", ""),
           Long.valueOf(1),
+          "user1@dummymail.com",
           "USD",
           BigDecimal.valueOf(10),
           new ArrayList<Ticket>()
@@ -37,6 +38,7 @@ class LoadDatabase {
           UUID.randomUUID().toString().replace("-", ""),
           UUID.randomUUID().toString().replace("-", ""),
           Long.valueOf(2),
+          "user2@dummymail.com",
           "EUR",
           BigDecimal.valueOf(18),
           new ArrayList<Ticket>()
