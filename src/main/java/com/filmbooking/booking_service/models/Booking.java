@@ -41,6 +41,9 @@ public class Booking implements Serializable {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "movie_id", nullable = true)
+    private Long movieId;
+
     @Column(name = "currency")
     private String currency;
 
@@ -74,12 +77,13 @@ public class Booking implements Serializable {
     }
 
     public Booking(String orderId, String payerId,
-            Long userId, String userEmail,
+            Long userId, String userEmail, Long movieId,
             String currency, BigDecimal amount, List<Ticket> tickets) {
         this.orderId = orderId;
         this.payerId = payerId;
         this.userId = userId;
         this.userEmail = userEmail;
+        this.movieId = movieId;
         this.currency = currency;
         this.amount = amount;
         this.tickets = tickets;
@@ -123,6 +127,14 @@ public class Booking implements Serializable {
 
     public void setUserEmail(String userEmail) {
         this.userEmail = userEmail;
+    }
+
+    public Long getMovieId() {
+        return this.movieId;
+    }
+
+    public void setMovieId(Long movieId) {
+        this.movieId = movieId;
     }
 
     public String getCurrency() {
