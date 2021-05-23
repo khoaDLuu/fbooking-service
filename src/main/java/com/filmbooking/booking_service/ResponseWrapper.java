@@ -5,7 +5,7 @@ import java.util.List;
 public class ResponseWrapper<T> {
     private List<T> data;
 
-    ResponseWrapper(List<T> data) {
+    public ResponseWrapper(List<T> data) {
         this.data = data;
     }
 
