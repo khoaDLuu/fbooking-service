@@ -4,6 +4,9 @@ spring.jpa:
 
 server:
     port: ${PORT}
+    error:
+        include-message: always
+        # whitelabel.enabled: false
 
 spring:
     application.name: booking-service
@@ -14,4 +17,4 @@ eureka.client:
     registryFetchIntervalSeconds: 30
     serviceUrl.defaultZone: ${SERVICE_DISCOVERER_URL}/eureka/
 
-email.default: phuoccong99@gmail.com
+email.default: ${EMAIL_DEFAULT}
