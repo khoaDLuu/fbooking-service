@@ -62,8 +62,17 @@ public class RevenueController {
             }
             return new ResponseWrapper<Revenue>(unwrapped);
         }
-        catch (DateTimeParseException | NumberFormatException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        catch (DateTimeParseException e) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Malformed query params: 'from' or 'to'"
+            );
+        }
+        catch (NumberFormatException e) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Malformed query params: 'movie_id'"
+            );
         }
     }
 
