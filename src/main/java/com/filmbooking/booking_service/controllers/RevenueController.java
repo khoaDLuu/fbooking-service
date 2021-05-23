@@ -29,18 +29,13 @@ public class RevenueController {
         responseContainer = "List"
     )
     ResponseWrapper<Revenue> many(
-        @RequestParam(value = "from", required = false)
+        @RequestParam(value = "from", required = true)
         String dateFrom,
-        @RequestParam(value = "to", required = false)
+        @RequestParam(value = "to", required = true)
         String dateTo,
         @RequestParam(value = "movie_id", required = false)
         String movieId
     ) {
-        //############# DEBUG ##############//
-        System.out.println("dateFrom: " + dateFrom);
-        System.out.println("dateTo: " + dateTo);
-        System.out.println("movieId: " + movieId);
-        //############# DEBUG ##############//
         List<Revenue> unwrapped = null;
         if (movieId == null) {
             unwrapped = repo.retrieveBetween(
