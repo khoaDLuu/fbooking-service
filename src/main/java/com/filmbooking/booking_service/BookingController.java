@@ -31,11 +31,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import io.swagger.annotations.ApiOperation;
+
 import com.filmbooking.booking_service.models.Booking;
+import com.filmbooking.booking_service.repositories.BookingRepository;
 
 @RestController
 class BookingController {
@@ -251,8 +255,23 @@ class BookingController {
     }
 
     @GetMapping("/bookings")
-    List<Booking> all() {
-        return repository.findAll();
+    @ApiOperation(
+        value = "retrieve bookings",
+        response = Booking.class,
+        responseContainer = "List"
+    )
+    ResponseWrapper<Booking> all(
+        @RequestParam(value = "user_id", required = false)
+        String userId
+    ) {
+        List<Booking> unwrapped = null;
+        if (userId != null) {
+            unwrapped = repository.findByUser(Long.parseLong(userId));
+        }
+        else {
+            unwrapped = repository.findAll();
+        }
+        return new ResponseWrapper<Booking>(unwrapped);
     }
 
     @GetMapping("/bookings/{id}")
