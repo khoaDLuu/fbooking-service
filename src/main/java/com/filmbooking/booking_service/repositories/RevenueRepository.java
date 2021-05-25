@@ -24,19 +24,21 @@ public class RevenueRepository {
         Instant dateFrom, Instant dateTo
     ) {
         String hql = "SELECT cast(e.createdAt as date) as _date, " +
+                     "e.movieId as _movie_id, " +
                      "SUM(e.amount) as _total " +
                      "FROM Booking e " +
                      "WHERE (e.createdAt BETWEEN :dateFrom AND :dateTo) " +
-                     "GROUP BY _date";
+                     "GROUP BY _date, _movie_id";
         Query query = entityManager.createQuery(hql);
         query.setParameter("dateFrom", dateFrom);
         query.setParameter("dateTo", dateTo);
-        List<Object[]> revenue = (List<Object[]>) query.getResultList();
-        return revenue
+        List<Object[]> revenues = (List<Object[]>) query.getResultList();
+        return revenues
             .stream()
             .map(row -> new Revenue(
                     LocalDate.parse(row[0].toString()),
-                    new BigDecimal(row[1].toString())
+                    new BigDecimal(row[2].toString()),
+                    Long.valueOf(row[1] != null ? row[1].toString() : "-1")
                 )
             )
             .collect(Collectors.toList());
@@ -62,7 +64,8 @@ public class RevenueRepository {
             .stream()
             .map(row -> new Revenue(
                     LocalDate.parse(row[0].toString()),
-                    new BigDecimal(row[1].toString())
+                    new BigDecimal(row[1].toString()),
+                    movieId
                 )
             )
             .collect(Collectors.toList());

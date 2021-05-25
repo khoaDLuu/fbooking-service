@@ -12,10 +12,12 @@ public class Revenue {
 
     LocalDate date;
     BigDecimal total;
+    Long movieId;
 
-    public Revenue(LocalDate date, BigDecimal total) {
+    public Revenue(LocalDate date, BigDecimal total, Long movieId) {
         this.date = date;
         this.total = total;
+        this.movieId = movieId;
     }
 
     public LocalDate getDate() {
@@ -34,6 +36,14 @@ public class Revenue {
         this.total = total;
     }
 
+    public Long getMovieId() {
+        return this.movieId;
+    }
+
+    public void setMovieId(Long movieId) {
+        this.movieId = movieId;
+    }
+
     @Override
     public boolean equals(Object o) {
 
@@ -44,18 +54,20 @@ public class Revenue {
 
         Revenue rev = (Revenue) o;
         return Objects.equals(this.date, rev.date)
-            && Objects.equals(this.total, rev.total);
+            && Objects.equals(this.total, rev.total)
+            && Objects.equals(this.movieId, rev.movieId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.date, this.total);
+        return Objects.hash(this.date, this.total, this.movieId);
     }
 
     @Override
     public String toString() {
         return "Revenue{" +
             "date=" + this.date + ", " +
-            "total=" + this.total + " USD}";
+            "total=" + this.total + " USD, " +
+            "movieId=" + this.movieId + "}";
     }
 }
