@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.filmbooking.booking_service.models.Booking;
 import com.filmbooking.booking_service.models.Ticket;
+import com.filmbooking.booking_service.repositories.BookingRepository;
 
 @Configuration
 class LoadDatabase {
