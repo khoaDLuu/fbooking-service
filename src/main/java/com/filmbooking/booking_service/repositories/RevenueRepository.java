@@ -20,7 +20,7 @@ public class RevenueRepository {
     private EntityManager entityManager;
 
     @SuppressWarnings("unchecked")
-    public List<Revenue> retrieveBetween(
+    public List<Revenue> retrieveForAll(
         Instant dateFrom, Instant dateTo
     ) {
         String hql = "SELECT cast(e.createdAt as date) as _date, " +
@@ -66,6 +66,34 @@ public class RevenueRepository {
                     LocalDate.parse(row[0].toString()),
                     new BigDecimal(row[1].toString()),
                     movieId
+                )
+            )
+            .collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Revenue> retrieveForLatest(
+        Long movieCount
+    ) {
+        String sql = "SELECT NULL as _date, " +
+                     "SUM(b.amount) as _total, " +
+                     "movie_id " +
+                     "FROM bookings b " +
+                     "WHERE movie_id IN (" +
+                     "  SELECT b1.movie_id FROM bookings b1 " +
+                     "  GROUP BY b1.movie_id " +
+                     "  ORDER BY MAX(b1.created_at) DESC " +
+                     "  LIMIT :mv_c) " +
+                     "GROUP BY (_date, movie_id)";
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("mv_c", movieCount);
+        List<Object[]> revenue = (List<Object[]>) query.getResultList();
+        return revenue
+            .stream()
+            .map(row -> new Revenue(
+                    null,
+                    new BigDecimal(row[1].toString()),
+                    Long.valueOf(row[2].toString())
                 )
             )
             .collect(Collectors.toList());

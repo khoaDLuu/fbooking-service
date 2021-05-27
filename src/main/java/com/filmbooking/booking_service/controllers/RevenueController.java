@@ -31,10 +31,10 @@ public class RevenueController {
         response = Revenue.class,
         responseContainer = "List"
     )
-    ResponseWrapper<Revenue> many(
-        @RequestParam(value = "from", required = true)
+    ResponseWrapper<Revenue> manyByDateRange(
+        @RequestParam(value = "from", required = false)
         String from,
-        @RequestParam(value = "to", required = true)
+        @RequestParam(value = "to", required = false)
         String to,
         @RequestParam(value = "movie_id", required = false)
         String _movieId
@@ -42,11 +42,13 @@ public class RevenueController {
         try {
             List<Revenue> unwrapped = null;
 
-            LocalDate dateFrom = LocalDate.parse(from);
-            LocalDate dateTo = LocalDate.parse(to);
+            LocalDate dateFrom = from == null ? LocalDate.of(1970, 1, 1)
+                               : LocalDate.parse(from);
+            LocalDate dateTo = to == null ? LocalDate.now(ZoneId.systemDefault())
+                             : LocalDate.parse(to);
 
             if (_movieId == null) {
-                unwrapped = repo.retrieveBetween(
+                unwrapped = repo.retrieveForAll(
                     this.toTimestamp(dateFrom, true),
                     this.toTimestamp(dateTo, false)
                 );
@@ -65,13 +67,38 @@ public class RevenueController {
         catch (DateTimeParseException e) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
-                "Malformed query params: 'from' or 'to'"
+                "Malformed query param value: 'from' or 'to'"
             );
         }
         catch (NumberFormatException e) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
-                "Malformed query params: 'movie_id'"
+                "Malformed query param value: 'movie_id'"
+            );
+        }
+    }
+
+    @GetMapping("/revenues/latest")
+    @ApiOperation(
+        value = "retrieve revenues for latest movies",
+        response = Revenue.class,
+        responseContainer = "List"
+    )
+    ResponseWrapper<Revenue> manyByMovie(
+        @RequestParam(value = "movie_count", required = false)
+        String _movieCount
+    ) {
+        try {
+            List<Revenue> unwrapped = null;
+            Long movieCount = _movieCount == null ? 5
+                            : Long.valueOf(_movieCount);
+            unwrapped = repo.retrieveForLatest(movieCount);
+            return new ResponseWrapper<Revenue>(unwrapped);
+        }
+        catch (NumberFormatException e) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Malformed query param value: 'movie_count'"
             );
         }
     }
