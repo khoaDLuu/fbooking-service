@@ -72,9 +72,7 @@ public class RevenueRepository {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Revenue> retrieveForLatest(
-        Long movieCount
-    ) {
+    public List<Revenue> retrieveTotalForLatest(Long movieCount) {
         String sql = "SELECT NULL as _date, " +
                      "SUM(b.amount) as _total, " +
                      "movie_id " +
@@ -87,8 +85,8 @@ public class RevenueRepository {
                      "GROUP BY (_date, movie_id)";
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("mv_c", movieCount);
-        List<Object[]> revenue = (List<Object[]>) query.getResultList();
-        return revenue
+        List<Object[]> revenues = (List<Object[]>) query.getResultList();
+        return revenues
             .stream()
             .map(row -> new Revenue(
                     null,
@@ -97,5 +95,23 @@ public class RevenueRepository {
                 )
             )
             .collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    public Revenue retrieveTotalForOne(Long movieId) {
+        String sql = "SELECT NULL as _date, " +
+                     "SUM(b.amount) as _total, " +
+                     "movie_id " +
+                     "FROM bookings b " +
+                     "WHERE movie_id = :mv_id " +
+                     "GROUP BY (_date, movie_id)";
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("mv_id", movieId);
+        List<Object[]> revenue = (List<Object[]>) query.getResultList();
+        return new Revenue(
+            null,
+            new BigDecimal(revenue.get(0)[1].toString()),
+            Long.valueOf(revenue.get(0)[2].toString())
+        );
     }
 }

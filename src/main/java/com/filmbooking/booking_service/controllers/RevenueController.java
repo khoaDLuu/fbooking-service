@@ -8,12 +8,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import com.filmbooking.booking_service.ResponseWrapper;
+import com.filmbooking.booking_service.ResponseWrapperSingle;
 import com.filmbooking.booking_service.models.Revenue;
 import com.filmbooking.booking_service.repositories.RevenueRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -78,7 +80,17 @@ public class RevenueController {
         }
     }
 
-    @GetMapping("/revenues/latest")
+    @GetMapping("/revenues/total/by-movie/{movieId}")
+    @ApiOperation(
+        value = "retrieve total revenue for a movie",
+        response = Revenue.class
+    )
+    ResponseWrapperSingle<Revenue> manyByMovie(@PathVariable Long movieId) {
+        Revenue totalRev = repo.retrieveTotalForOne(movieId);
+        return new ResponseWrapperSingle<Revenue>(totalRev);
+    }
+
+    @GetMapping("/revenues/total/by-movie/latest")
     @ApiOperation(
         value = "retrieve revenues for latest movies",
         response = Revenue.class,
@@ -92,7 +104,7 @@ public class RevenueController {
             List<Revenue> unwrapped = null;
             Long movieCount = _movieCount == null ? 5
                             : Long.valueOf(_movieCount);
-            unwrapped = repo.retrieveForLatest(movieCount);
+            unwrapped = repo.retrieveTotalForLatest(movieCount);
             return new ResponseWrapper<Revenue>(unwrapped);
         }
         catch (NumberFormatException e) {
