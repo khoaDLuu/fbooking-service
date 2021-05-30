@@ -108,6 +108,13 @@ public class RevenueRepository {
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("mv_id", movieId);
         List<Object[]> revenue = (List<Object[]>) query.getResultList();
+        if (revenue.size() == 0) {
+            return new Revenue(
+                null,
+                new BigDecimal(0),
+                movieId
+            );
+        }
         return new Revenue(
             null,
             new BigDecimal(revenue.get(0)[1].toString()),
