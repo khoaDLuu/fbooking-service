@@ -22,6 +22,9 @@ public class PaypalRequest {
 
     public BigDecimal total() {
         BigDecimal sum = BigDecimal.valueOf(0);
+        if (tickets == null) {
+            return new BigDecimal(0);
+        }
         for (TicketDetails ticketDetails : tickets) {
             sum = sum.add(ticketDetails.getPrice());
         }
