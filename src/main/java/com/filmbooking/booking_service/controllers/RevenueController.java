@@ -11,11 +11,15 @@ import com.filmbooking.booking_service.ResponseWrapper;
 import com.filmbooking.booking_service.ResponseWrapperSingle;
 import com.filmbooking.booking_service.models.Revenue;
 import com.filmbooking.booking_service.repositories.RevenueRepository;
+import com.filmbooking.booking_service.utils.authHeader.DefaultAuthHeader;
+import com.filmbooking.booking_service.utils.permission.operation.SimpleOperation;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -34,6 +38,7 @@ public class RevenueController {
         responseContainer = "List"
     )
     ResponseWrapper<Revenue> manyByDateRange(
+        @RequestHeader HttpHeaders ppHeaders,
         @RequestParam(value = "from", required = false)
         String from,
         @RequestParam(value = "to", required = false)
@@ -41,6 +46,17 @@ public class RevenueController {
         @RequestParam(value = "movie_id", required = false)
         String _movieId
     ) {
+        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
+            new SimpleOperation("REVENUE.READ")
+        )) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "READ action on REVENUE, " +
+                "or your token is not valid"
+            );
+        }
+
         try {
             List<Revenue> unwrapped = null;
 
@@ -85,7 +101,21 @@ public class RevenueController {
         value = "retrieve total revenue for a movie",
         response = Revenue.class
     )
-    ResponseWrapperSingle<Revenue> manyByMovie(@PathVariable Long movieId) {
+    ResponseWrapperSingle<Revenue> manyByMovie(
+        @RequestHeader HttpHeaders ppHeaders,
+        @PathVariable Long movieId
+    ) {
+        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
+            new SimpleOperation("REVENUE.READ")
+        )) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "READ action on REVENUE, " +
+                "or your token is not valid"
+            );
+        }
+
         Revenue totalRev = repo.retrieveTotalForOne(movieId);
         return new ResponseWrapperSingle<Revenue>(totalRev);
     }
@@ -97,9 +127,21 @@ public class RevenueController {
         responseContainer = "List"
     )
     ResponseWrapper<Revenue> manyByMovie(
+        @RequestHeader HttpHeaders ppHeaders,
         @RequestParam(value = "movie_count", required = false)
         String _movieCount
     ) {
+        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
+            new SimpleOperation("REVENUE.READ")
+        )) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "READ action on REVENUE, " +
+                "or your token is not valid"
+            );
+        }
+
         try {
             List<Revenue> unwrapped = null;
             Long movieCount = _movieCount == null ? 5
