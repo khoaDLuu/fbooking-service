@@ -170,7 +170,6 @@ class BookingController {
     }
 
     private void sendCodeForQR(String code, String auth, String emailTo) {
-        // send code for QR; System.getenv("MANAGEMENT_SITE_URL")
         WebClient apiClient = WebClient.create(
             System.getenv("QR_MAIL_URL_BASE")
         );
@@ -178,22 +177,11 @@ class BookingController {
             "{\"mailFrom\":\"%s\"," +
             "\"mailTo\":\"%s\"," +
             "\"embeddedlink\":\"%s?code=%s\"}",
-            System.getenv("EMAIL_DEFAULT"),
-            emailTo,
+            System.getenv("EMAIL_DEFAULT"), emailTo,
             System.getenv("MANAGEMENT_SITE_URL"), code
         );
 
         // ############## DEBUG ############## //
-        System.out.println(
-            "QR_MAIL_URL: " +
-            System.getenv("QR_MAIL_URL_BASE") +
-            System.getenv("QR_MAIL_URL_PATH")
-        );
-        System.out.println("EMAIL_DEFAULT: " + System.getenv("EMAIL_DEFAULT"));
-        System.out.println(
-            "MANAGEMENT_SITE_URL: " +
-            System.getenv("MANAGEMENT_SITE_URL")
-        );
         System.out.println("Body content: " + bodyContent);
         // ############## DEBUG ############## //
 
@@ -243,11 +231,8 @@ class BookingController {
                         true
                     );
                 }
-                return response;
             }
-            else {
-                return null; // TODO : throw Exception
-            }
+            return response;
         }
         catch (PSQLException sqlEx) {
             throw new ConstraintViolationException(sqlEx.getMessage());
