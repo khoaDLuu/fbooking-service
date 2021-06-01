@@ -311,14 +311,13 @@ class BookingController {
 
     @GetMapping("/bookings")
     @ApiOperation(
-        value = "retrieve bookings",
+        value = "retrieve bookings (optionally by user_id)",
         response = Booking.class,
         responseContainer = "List"
     )
     ResponseWrapper<Booking> all(
         @RequestHeader HttpHeaders ppHeaders,
-        @RequestParam(value = "user_id", required = false)
-        String userId
+        @RequestParam(value = "user_id", required = false) String userId
     ) {
         if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
             new SimpleOperation("BOOKING.READ")
@@ -339,6 +338,38 @@ class BookingController {
             unwrapped = repository.findAll();
         }
         return new ResponseWrapper<Booking>(unwrapped);
+    }
+
+    @GetMapping("/bookings/by-code/{code}")
+    @ApiOperation(
+        value = "retrieve bookings by code",
+        response = Booking.class
+    )
+    ResponseWrapperSingle<Booking> oneByCode(
+        @RequestHeader HttpHeaders ppHeaders,
+        @PathVariable String code
+    ) {
+        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
+            new SimpleOperation("BOOKING.READ")
+        )) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "READ action on BOOKING, " +
+                "or your token is not valid"
+            );
+        }
+
+        try {
+            Booking unwrapped = repository.findByCode(code);
+            return new ResponseWrapperSingle<Booking>(unwrapped);
+        }
+        catch (IndexOutOfBoundsException e) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Your booking code is invalid or missing"
+            );
+        }
     }
 
     @GetMapping("/bookings/{id}")

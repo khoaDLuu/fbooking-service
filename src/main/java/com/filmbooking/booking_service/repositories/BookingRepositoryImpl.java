@@ -25,4 +25,16 @@ public class BookingRepositoryImpl {
         query.setParameter("usr_id", userId);
         return query.getResultList();
     }
+
+    @SuppressWarnings("unused")
+    public Booking findByCode(String code) {
+        String hql = "SELECT e FROM Booking e WHERE e.code = :bk_code";
+        TypedQuery<Booking> query = entityManager.createQuery(
+            hql,
+            Booking.class
+        );
+        query.setParameter("bk_code", code);
+        return query.getResultList().get(0);
+    }
+
 }
