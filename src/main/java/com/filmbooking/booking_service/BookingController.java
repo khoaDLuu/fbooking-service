@@ -252,8 +252,18 @@ class BookingController {
             .body(BodyInserters.fromValue(bodyContent))
             .retrieve()
             .bodyToMono(String.class)
+            .doOnError(throwable ->
+                System.out.println("Failed for some reason: " + throwable))
+            .onErrorReturn(new String(""))
             .block();
-        System.out.println("Result here: " + res);
+        System.out.println("QR sending result: " + res);
+
+        if (res.equals("")) {
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Failed to send QR code to mailing service"
+            );
+        }
     }
 
     @Transactional
