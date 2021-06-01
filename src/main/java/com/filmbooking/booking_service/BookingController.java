@@ -5,8 +5,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
 import com.paypal.http.HttpResponse;
 import com.paypal.orders.AmountWithBreakdown;
 import com.paypal.orders.ApplicationContext;
@@ -22,6 +20,7 @@ import com.paypal.orders.PurchaseUnitRequest;
 
 import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,14 +31,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 
 import io.swagger.annotations.ApiOperation;
 
 import com.filmbooking.booking_service.models.Booking;
 import com.filmbooking.booking_service.repositories.BookingRepository;
+import com.filmbooking.booking_service.utils.authHeader.AuthHeader;
+import com.filmbooking.booking_service.utils.authHeader.DefaultAuthHeader;
+import com.filmbooking.booking_service.utils.permission.operation.Operation;
+import com.filmbooking.booking_service.utils.permission.operation.SimpleOperation;
 
 @RestController
 class BookingController {
@@ -85,7 +90,20 @@ class BookingController {
     }
 
     @PostMapping("/bookings/prepare")
-    PaypalResponse createOrder(@RequestBody PaypalRequest ppReq) throws IOException {
+    PaypalResponse createOrder(
+        @RequestBody PaypalRequest ppReq,
+        @RequestHeader HttpHeaders ppHeaders
+    ) {
+        AuthHeader auth = new DefaultAuthHeader(ppHeaders);
+        Operation thisOp = new SimpleOperation("BOOKING.CREATE");
+        if (!auth.token().claims().perms().allow(thisOp)) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "CREATE action on BOOKING, " +
+                "or your token is not valid"
+            );
+        }
 
         OrdersCreateRequest request = new OrdersCreateRequest();
         request.prefer("return=representation");
@@ -94,78 +112,120 @@ class BookingController {
             ppReq.getCurrency()
         ));
 
-        // Call PayPal to set up a transaction
-        HttpResponse<Order> response = this.paypal.client().execute(request);
+        try {
+            // Call PayPal to set up a transaction
+            HttpResponse<Order> resp = this.paypal.client().execute(request);
 
-        if (response.statusCode() == HttpStatus.CREATED.value()) {
-            // ############## DEBUG ############## //
-            System.out.println("Status Code: " + response.statusCode());
-            System.out.println("Status: " + response.result().status());
-            System.out.println("Order ID: " + response.result().id());
-            System.out.println(
-                "Intent: " + response.result().checkoutPaymentIntent()
-            );
-            System.out.println("Links: ");
-            for (LinkDescription link : response.result().links()) {
+            if (resp.statusCode() == HttpStatus.CREATED.value()) {
+                // ############## DEBUG ############## //
+                System.out.println("Status Code: " + resp.statusCode());
+                System.out.println("Status: " + resp.result().status());
+                System.out.println("Order ID: " + resp.result().id());
                 System.out.println(
-                    "\t" + link.rel() +
-                    ": " + link.href() +
-                    "\tCall Type: " + link.method()
+                    "Intent: " + resp.result().checkoutPaymentIntent()
+                );
+                System.out.println("Links: ");
+                for (LinkDescription link : resp.result().links()) {
+                    System.out.println(
+                        "\t" + link.rel() +
+                        ": " + link.href() +
+                        "\tCall Type: " + link.method()
+                    );
+                }
+                System.out.println(
+                    "Total Amount: "
+                    + resp.result().purchaseUnits().get(0)
+                        .amountWithBreakdown().currencyCode() + " " +
+                        resp.result().purchaseUnits().get(0)
+                        .amountWithBreakdown().value()
+                );
+                // ############## DEBUG ############## //
+            }
+            else {
+                throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to set up Paypal transaction, code " +
+                    resp.statusCode()
                 );
             }
-            System.out.println(
-                "Total Amount: "
-                + response.result().purchaseUnits().get(0)
-                    .amountWithBreakdown().currencyCode() + " " +
-                response.result().purchaseUnits().get(0)
-                    .amountWithBreakdown().value()
-            );
-            // ############## DEBUG ############## //
-        }
 
-        return new PaypalResponse(
-            response.result().id(),
-            response.result().purchaseUnits().get(0)
-                .amountWithBreakdown().value() + " " +
-                response.result().purchaseUnits().get(0)
-                    .amountWithBreakdown().currencyCode(),
-            response.result().createTime()
-        );
+            return new PaypalResponse(
+                resp.result().id(),
+                resp.result().purchaseUnits().get(0)
+                    .amountWithBreakdown().value() + " " +
+                    resp.result().purchaseUnits().get(0)
+                        .amountWithBreakdown().currencyCode(),
+                        resp.result().createTime()
+            );
+        }
+        catch (IOException ex) {
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Failed to make a request to PayPal to set up the transaction"
+            );
+        }
     }
 
     @PostMapping("/bookings/confirm")
     Booking approveOrder(
         @RequestBody Booking booking,
-        HttpServletRequest req
-    ) throws IOException {
-        String authHeader = req.getHeader("Authorization");
+        @RequestHeader HttpHeaders ppHeaders
+    ) {
+        AuthHeader auth = new DefaultAuthHeader(ppHeaders);
+        Operation thisOp = new SimpleOperation("BOOKING.CREATE");
+        if (!auth.token().claims().perms().allow(thisOp)) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "CREATE action on BOOKING, " +
+                "or your token is not valid"
+            );
+        }
+
         OrdersGetRequest request = new OrdersGetRequest(booking.getOrderId());
 
-        // Call PayPal to get the transaction
-        HttpResponse<Order> response = paypal.client().execute(request);
+        try {
+            // Call PayPal to get the transaction
+            HttpResponse<Order> response = paypal.client().execute(request);
 
-        if (response.statusCode() == HttpStatus.OK.value()) {
-            response = this.captureOrder(booking);
+            if (response.statusCode() == HttpStatus.OK.value()) {
+                response = this.captureOrder(booking);
 
-            if (response.statusCode() == HttpStatus.CREATED.value()) {
-                // ############## DEBUG ############## //
-                System.out.println("Order ID: " + response.result().id());
-                // ############## DEBUG ############## //
+                if (response.statusCode() == HttpStatus.CREATED.value()) {
+                    // ############## DEBUG ############## //
+                    System.out.println("Order ID: " + response.result().id());
+                    // ############## DEBUG ############## //
 
-                this.sendCodeForQR(
-                    booking.getCode(),
-                    authHeader,
-                    booking.getUserEmail()
-                );
+                    this.sendCodeForQR(
+                        booking.getCode(),
+                        ppHeaders.getOrEmpty("Authorization").get(0),
+                        booking.getUserEmail()
+                    );
 
-                return booking;
+                    return booking;
+                }
+                else {
+                    throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Failed to capture Paypal order, code " +
+                        response.statusCode()
+                    );
+                }
             }
             else {
-                return null; // TODO : throw Exception
+                throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to retrieve Paypal transaction, code " +
+                    response.statusCode()
+                );
             }
         }
-        else {
-            return null; // TODO : throw Exception
+        catch (IOException ex) {
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Failed to make a request to PayPal to get/capture " +
+                "the transaction"
+            );
         }
     }
 
@@ -261,9 +321,21 @@ class BookingController {
         responseContainer = "List"
     )
     ResponseWrapper<Booking> all(
+        @RequestHeader HttpHeaders ppHeaders,
         @RequestParam(value = "user_id", required = false)
         String userId
     ) {
+        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
+            new SimpleOperation("BOOKING.READ")
+        )) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "READ action on BOOKING, " +
+                "or your token is not valid"
+            );
+        }
+
         List<Booking> unwrapped = null;
         if (userId != null) {
             unwrapped = repository.findByUser(Long.parseLong(userId));
@@ -275,13 +347,37 @@ class BookingController {
     }
 
     @GetMapping("/bookings/{id}")
-    Booking one(@PathVariable Long id) {
+    Booking one(@RequestHeader HttpHeaders ppHeaders, @PathVariable Long id) {
+        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
+            new SimpleOperation("BOOKING.READ")
+        )) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "READ action on BOOKING, " +
+                "or your token is not valid"
+            );
+        }
 
         return repository.findById(id).orElseThrow(() -> new BookingNotFoundException(id));
     }
 
     @PutMapping("/bookings/{id}")
-    Booking replaceBooking(@RequestBody Booking newBooking, @PathVariable Long id) {
+    Booking replaceBooking(
+        @RequestHeader HttpHeaders ppHeaders,
+        @RequestBody Booking newBooking,
+        @PathVariable Long id
+    ) {
+        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
+            new SimpleOperation("BOOKING.UPDATE")
+        )) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "Currently, no one has the permission to perform " +
+                "UPDATE action on BOOKING"
+            );
+        }
+
         // Note: Use case: when the user cancel a booking ?
         return repository.findById(id).map(booking -> {
             booking.setUserId(newBooking.getUserId());
@@ -295,7 +391,20 @@ class BookingController {
     }
 
     @DeleteMapping("/bookings/{id}")
-    void deleteBooking(@PathVariable Long id) {
+    void deleteBooking(
+        @RequestHeader HttpHeaders ppHeaders,
+        @PathVariable Long id
+    ) {
+        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
+            new SimpleOperation("BOOKING.DELETE")
+        )) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "Currently, no one has the permission to perform " +
+                "DELETE action on BOOKING"
+            );
+        }
+
         repository.deleteById(id);
     }
 }
