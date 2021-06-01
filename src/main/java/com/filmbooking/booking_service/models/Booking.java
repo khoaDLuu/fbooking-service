@@ -30,7 +30,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
     name = "bookings",
     indexes = {
         @Index(name = "movie_index", columnList = "movie_id"),
-        @Index(name = "date_index", columnList = "created_at")
+        @Index(name = "date_index", columnList = "created_at"),
+        @Index(name = "code_index", columnList = "code")
     }
 )
 public class Booking implements Serializable {
