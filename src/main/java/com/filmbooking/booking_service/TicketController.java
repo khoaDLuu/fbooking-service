@@ -133,9 +133,21 @@ class TicketController {
             );
         }
 
-        List<Ticket> unwrapped = null;
-        unwrapped = repository.findByUser(allClaims.requester().id());
-        return new ResponseWrapper<Ticket>(unwrapped);
+        try {
+            List<Ticket> unwrapped = repository.findByUserAndScreening(
+                allClaims.requester().id(),
+                screeningId != null ?
+                Long.valueOf(screeningId) :
+                Long.valueOf(0)
+            );
+            return new ResponseWrapper<Ticket>(unwrapped);
+        }
+        catch (NumberFormatException e) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Malformed query param value: 'screening_id'"
+            );
+        }
     }
 
     @GetMapping("/tickets/mine/{id}")
