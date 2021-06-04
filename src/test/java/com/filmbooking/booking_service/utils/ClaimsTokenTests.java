@@ -8,6 +8,8 @@ import com.filmbooking.booking_service.utils.token.Token;
 import com.filmbooking.booking_service.utils.token.ValidatedToken;
 import com.filmbooking.booking_service.utils.token.claims.Claims;
 import com.filmbooking.booking_service.utils.token.claims.DefaultClaims;
+import com.filmbooking.booking_service.utils.user.Requester;
+import com.filmbooking.booking_service.utils.user.User;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -42,6 +44,40 @@ public class ClaimsTokenTests {
         Operation updOp = new SimpleOperation("UPDATE");
 
         Assertions.assertFalse(brokenClaims.perms().allow(updOp));
+    }
+
+    @Test
+    public void testClaimsReturningRequester() throws JSONException {
+        Claims claims = new DefaultClaims(
+            new JSONObject(
+                "{\"sub\":\"admin1\"," +
+                "\"roles\":\"ROLE_ADMIN\"," +
+                "\"id\":39," +
+                "\"permission\":" +
+                "{\"2\":\"READ\",\"3\":\"UPDATE\",\"4\":\"DELETE\"}," +
+                "\"iat\":1622304413," +
+                "\"exp\":1622390813}"
+            )
+        );
+        User dummyAdmin = new Requester(Long.valueOf(2), "Dummy", "ROLE_ADMIN");
+        User dummyGuest = new Requester(Long.valueOf(3), "Dumbo", "ROLE_GUEST");
+
+        Assertions.assertTrue(
+            claims.requester().roles().sameAs(dummyAdmin.roles())
+        );
+        Assertions.assertFalse(
+            claims.requester().roles().sameAs(dummyGuest.roles())
+        );
+    }
+
+    @Test
+    public void testClaimsReturningNullUser() {
+        Claims brokenClaims = new DefaultClaims(new JSONObject());
+        User dummyUser = new Requester(Long.valueOf(2), "Dummy", "ROLE_ADMIN");
+
+        Assertions.assertFalse(
+            brokenClaims.requester().roles().sameAs(dummyUser.roles())
+        );
     }
 
     @Test
