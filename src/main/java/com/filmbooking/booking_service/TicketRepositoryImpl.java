@@ -46,8 +46,8 @@ public class TicketRepositoryImpl {
                     Long.valueOf(row[0].toString()),
                     row[1].toString(),
                     Long.valueOf(row[2].toString()),
-                    Instant.parse(row[3].toString()),
-                    Instant.parse(row[4].toString())
+                    row[3] != null ? Instant.parse(row[3].toString()) : null,
+                    row[4] != null ? Instant.parse(row[4].toString()) : null
                 )
             )
             .collect(Collectors.toList());
