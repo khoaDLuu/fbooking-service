@@ -339,14 +339,22 @@ class BookingController {
             );
         }
 
-        List<Booking> unwrapped = null;
-        if (userId != null) {
-            unwrapped = repository.findByUser(Long.parseLong(userId));
+        try {
+            List<Booking> unwrapped = null;
+            if (userId != null) {
+                unwrapped = repository.findByUser(Long.parseLong(userId));
+            }
+            else {
+                unwrapped = repository.findAll();
+            }
+            return new ResponseWrapper<Booking>(unwrapped);
         }
-        else {
-            unwrapped = repository.findAll();
+        catch (NumberFormatException e) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Malformed query param value: 'user_id'"
+            );
         }
-        return new ResponseWrapper<Booking>(unwrapped);
     }
 
     @GetMapping("/bookings/by-code/{code}")
