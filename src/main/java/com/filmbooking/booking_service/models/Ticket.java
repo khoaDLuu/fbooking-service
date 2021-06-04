@@ -62,6 +62,14 @@ public class Ticket implements Serializable {
         this.booking = booking;
     }
 
+    public Ticket(Long id, String seatNumber, Long screeningId, Instant createdAt, Instant updatedAt) {
+        this.id = id;
+        this.seatNumber = seatNumber;
+        this.screeningId = screeningId;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
     public Long getId() {
         return this.id;
     }
