@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.filmbooking</groupId>
 	<artifactId>booking_service</artifactId>
-	<version>1.0.0</version>
+	<version>1.1.0</version>
 	<name>booking_service</name>
 	<description>The booking / payment service for the FilmBooking system.</description>
 	<properties>

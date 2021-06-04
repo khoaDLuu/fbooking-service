@@ -3,6 +3,8 @@ package com.filmbooking.booking_service.utils.token.claims;
 import com.filmbooking.booking_service.utils.permission.DefaultPermissions;
 import com.filmbooking.booking_service.utils.permission.NoPermission;
 import com.filmbooking.booking_service.utils.permission.Permissions;
+import com.filmbooking.booking_service.utils.user.NullUser;
+import com.filmbooking.booking_service.utils.user.Requester;
 import com.filmbooking.booking_service.utils.user.User;
 
 import org.json.JSONObject;
@@ -31,8 +33,18 @@ public class DefaultClaims implements Claims {
 
     @Override
     public User requester() {
-        // TODO Auto-generated method stub
-        return null;
+        try {
+            return new Requester(
+                this.payload.getLong("id"),
+                this.payload.getString("sub"),
+                this.payload.getString("roles")
+            );
+        }
+        catch (Exception e) {
+            System.out.println("[INFO] Failed to get requester info");
+            e.printStackTrace();
+            return new NullUser();
+        }
     }
 
 }

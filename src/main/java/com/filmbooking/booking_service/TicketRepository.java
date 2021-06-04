@@ -13,4 +13,5 @@ import com.filmbooking.booking_service.models.Booking;
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findByBooking(Booking booking, Sort sort);
     List<Ticket> findByScreening(Long screeningId);
+	List<Ticket> findByUser(Long id);
 }
