@@ -16,6 +16,8 @@ import io.swagger.annotations.ApiOperation;
 import com.filmbooking.booking_service.models.Ticket;
 import com.filmbooking.booking_service.utils.authHeader.DefaultAuthHeader;
 import com.filmbooking.booking_service.utils.permission.operation.SimpleOperation;
+import com.filmbooking.booking_service.utils.token.claims.Claims;
+import com.filmbooking.booking_service.utils.user.role.SimpleRole;
 
 @RestController
 class TicketController {
@@ -37,14 +39,21 @@ class TicketController {
         @RequestParam(value = "screening_id", required = false)
         String screening_id
     ) {
-        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
-            new SimpleOperation("TICKET.READ")
-        )) {
+        Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
+
+        if (allClaims.perms().forbid(new SimpleOperation("TICKET.READ"))) {
             throw new ResponseStatusException(
                 HttpStatus.UNAUTHORIZED,
                 "You don't have the permission to perform " +
                 "READ action on TICKET, " +
                 "or your token is not valid"
+            );
+        }
+
+        if (allClaims.requester().roles().sameAs(new SimpleRole("ROLE_GUEST"))) {
+            throw new ResponseStatusException(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Guest users are not allowed to view all tickets"
             );
         }
 
@@ -59,10 +68,10 @@ class TicketController {
     }
 
     @GetMapping("/tickets/{id}")
-    Ticket one(@RequestHeader HttpHeaders ppHeaders, @PathVariable Long id) {
-        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
-            new SimpleOperation("TICKET.READ")
-        )) {
+    ResponseWrapperSingle<Ticket> one(@RequestHeader HttpHeaders ppHeaders, @PathVariable Long id) {
+        Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
+
+        if (allClaims.perms().forbid(new SimpleOperation("TICKET.READ"))) {
             throw new ResponseStatusException(
                 HttpStatus.UNAUTHORIZED,
                 "You don't have the permission to perform " +
@@ -71,6 +80,90 @@ class TicketController {
             );
         }
 
-        return repository.findById(id).orElseThrow(() -> new TicketNotFoundException(id));
+        if (allClaims.requester().roles().sameAs(new SimpleRole("ROLE_GUEST"))) {
+            throw new ResponseStatusException(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Guest users are not allowed to view an arbitrary ticket"
+            );
+        }
+
+        return new ResponseWrapperSingle<Ticket>(
+            repository.findById(id).orElseThrow(
+                () -> new TicketNotFoundException(id)
+            )
+        );
+    }
+
+    @GetMapping("/tickets/mine")
+    @ApiOperation(
+        value = "retrieve my tickets",
+        response = Ticket.class,
+        responseContainer = "List"
+    )
+    ResponseWrapper<Ticket> allOfMine(
+        @RequestHeader HttpHeaders ppHeaders,
+        @RequestParam(value = "screening_id", required = false)
+        String screening_id
+    ) {
+        Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
+
+        if (allClaims.perms().forbid(new SimpleOperation("TICKET.READ"))) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "READ action on TICKET[.MINE], " +
+                "or your token is not valid"
+            );
+        }
+
+        if (
+            !allClaims.requester().roles().sameAs(new SimpleRole("ROLE_GUEST"))
+        ) {
+            throw new ResponseStatusException(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Only guest users have their own tickets to access"
+            );
+        }
+
+        List<Ticket> unwrapped = null;
+        unwrapped = repository.findByUser(allClaims.requester().id());
+        return new ResponseWrapper<Ticket>(unwrapped);
+    }
+
+    @GetMapping("/tickets/mine/{id}")
+    ResponseWrapperSingle<Ticket> oneOfMine(
+        @RequestHeader HttpHeaders ppHeaders,
+        @PathVariable Long id
+    ) {
+        Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
+
+        if (allClaims.perms().forbid(new SimpleOperation("TICKET.READ"))) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "READ action on TICKET[.MINE], " +
+                "or your token is not valid"
+            );
+        }
+
+        if (
+            !allClaims.requester().roles().sameAs(new SimpleRole("ROLE_GUEST"))
+        ) {
+            throw new ResponseStatusException(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Only guest users have their own tickets to access"
+            );
+        }
+
+        Ticket onlyTicket = repository.findById(id).orElseThrow(
+            () -> new TicketNotFoundException(id)
+        );
+
+        if (!onlyTicket.getBooking().getUserId().equals(
+            allClaims.requester().id())
+        ) {
+            throw new TicketNotFoundException(id);
+        }
+        return new ResponseWrapperSingle<Ticket>(onlyTicket);
     }
 }
