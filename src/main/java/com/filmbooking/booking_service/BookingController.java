@@ -45,6 +45,8 @@ import com.filmbooking.booking_service.utils.authHeader.AuthHeader;
 import com.filmbooking.booking_service.utils.authHeader.DefaultAuthHeader;
 import com.filmbooking.booking_service.utils.permission.operation.Operation;
 import com.filmbooking.booking_service.utils.permission.operation.SimpleOperation;
+import com.filmbooking.booking_service.utils.token.claims.Claims;
+import com.filmbooking.booking_service.utils.user.role.SimpleRole;
 
 @RestController
 class BookingController {
@@ -319,14 +321,21 @@ class BookingController {
         @RequestHeader HttpHeaders ppHeaders,
         @RequestParam(value = "user_id", required = false) String userId
     ) {
-        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
-            new SimpleOperation("BOOKING.READ")
-        )) {
+        Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
+
+        if (allClaims.perms().forbid(new SimpleOperation("BOOKING.READ"))) {
             throw new ResponseStatusException(
                 HttpStatus.UNAUTHORIZED,
                 "You don't have the permission to perform " +
                 "READ action on BOOKING, " +
                 "or your token is not valid"
+            );
+        }
+
+        if (allClaims.requester().roles().sameAs(new SimpleRole("ROLE_GUEST"))) {
+            throw new ResponseStatusException(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Guest users are not allowed to view all bookings"
             );
         }
 
@@ -349,9 +358,9 @@ class BookingController {
         @RequestHeader HttpHeaders ppHeaders,
         @PathVariable String code
     ) {
-        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
-            new SimpleOperation("BOOKING.READ")
-        )) {
+        Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
+
+        if (allClaims.perms().forbid(new SimpleOperation("BOOKING.READ"))) {
             throw new ResponseStatusException(
                 HttpStatus.UNAUTHORIZED,
                 "You don't have the permission to perform " +
@@ -373,10 +382,10 @@ class BookingController {
     }
 
     @GetMapping("/bookings/{id}")
-    Booking one(@RequestHeader HttpHeaders ppHeaders, @PathVariable Long id) {
-        if (new DefaultAuthHeader(ppHeaders).token().claims().perms().forbid(
-            new SimpleOperation("BOOKING.READ")
-        )) {
+    ResponseWrapperSingle<Booking> one(@RequestHeader HttpHeaders ppHeaders, @PathVariable Long id) {
+        Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
+
+        if (allClaims.perms().forbid(new SimpleOperation("BOOKING.READ"))) {
             throw new ResponseStatusException(
                 HttpStatus.UNAUTHORIZED,
                 "You don't have the permission to perform " +
@@ -385,7 +394,77 @@ class BookingController {
             );
         }
 
-        return repository.findById(id).orElseThrow(() -> new BookingNotFoundException(id));
+        if (allClaims.requester().roles().sameAs(new SimpleRole("ROLE_GUEST"))) {
+            throw new ResponseStatusException(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Guest users are not allowed to view an arbitrary booking"
+            );
+        }
+
+        return new ResponseWrapperSingle<Booking>(
+            repository.findById(id).orElseThrow(
+                () -> new BookingNotFoundException(id)
+            )
+        );
+    }
+
+    @GetMapping("/bookings/mine")
+    @ApiOperation(
+        value = "retrieve my bookings",
+        response = Booking.class,
+        responseContainer = "List"
+    )
+    ResponseWrapper<Booking> allOfMine(@RequestHeader HttpHeaders ppHeaders) {
+        Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
+
+        if (allClaims.perms().forbid(new SimpleOperation("BOOKING.READ"))) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "READ action on BOOKING[.MINE], " +
+                "or your token is not valid"
+            );
+        }
+
+        if (!allClaims.requester().roles().sameAs(new SimpleRole("ROLE_GUEST"))) {
+            throw new ResponseStatusException(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Only guest users have their own bookings to access"
+            );
+        }
+
+        List<Booking> unwrapped = null;
+        unwrapped = repository.findByUser(allClaims.requester().id());
+        return new ResponseWrapper<Booking>(unwrapped);
+    }
+
+    @GetMapping("/bookings/mine/{id}")
+    ResponseWrapperSingle<Booking> oneOfMine(@RequestHeader HttpHeaders ppHeaders, @PathVariable Long id) {
+        Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
+
+        if (allClaims.perms().forbid(new SimpleOperation("BOOKING.READ"))) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "You don't have the permission to perform " +
+                "READ action on BOOKING[.MINE], " +
+                "or your token is not valid"
+            );
+        }
+
+        if (!allClaims.requester().roles().sameAs(new SimpleRole("ROLE_GUEST"))) {
+            throw new ResponseStatusException(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Only guest users have their own bookings to access"
+            );
+        }
+
+        Booking onlyBooking = repository.findById(id).orElseThrow(
+            () -> new BookingNotFoundException(id)
+        );
+        if (!onlyBooking.getUserId().equals(allClaims.requester().id())) {
+            throw new BookingNotFoundException(id);
+        }
+        return new ResponseWrapperSingle<Booking>(onlyBooking);
     }
 
     @PutMapping("/bookings/{id}")
@@ -398,7 +477,7 @@ class BookingController {
             new SimpleOperation("BOOKING.UPDATE")
         )) {
             throw new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
+                HttpStatus.METHOD_NOT_ALLOWED,
                 "Currently, no one has the permission to perform " +
                 "UPDATE action on BOOKING"
             );
@@ -425,7 +504,7 @@ class BookingController {
             new SimpleOperation("BOOKING.DELETE")
         )) {
             throw new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
+                HttpStatus.METHOD_NOT_ALLOWED,
                 "Currently, no one has the permission to perform " +
                 "DELETE action on BOOKING"
             );
