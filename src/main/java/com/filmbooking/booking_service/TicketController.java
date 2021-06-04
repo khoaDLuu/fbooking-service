@@ -37,7 +37,7 @@ class TicketController {
     ResponseWrapper<Ticket> all(
         @RequestHeader HttpHeaders ppHeaders,
         @RequestParam(value = "screening_id", required = false)
-        String screening_id
+        String screeningId
     ) {
         Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
 
@@ -57,14 +57,22 @@ class TicketController {
             );
         }
 
-        List<Ticket> unwrapped = null;
-        if (screening_id != null) {
-            unwrapped = repository.findByScreening(Long.parseLong(screening_id));
+        try {
+            List<Ticket> unwrapped = null;
+            if (screeningId != null) {
+                unwrapped = repository.findByScreening(Long.parseLong(screeningId));
+            }
+            else {
+                unwrapped = repository.findAll();
+            }
+            return new ResponseWrapper<Ticket>(unwrapped);
         }
-        else {
-            unwrapped = repository.findAll();
+        catch (NumberFormatException e) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Malformed query param value: 'screening_id'"
+            );
         }
-        return new ResponseWrapper<Ticket>(unwrapped);
     }
 
     @GetMapping("/tickets/{id}")
@@ -103,7 +111,7 @@ class TicketController {
     ResponseWrapper<Ticket> allOfMine(
         @RequestHeader HttpHeaders ppHeaders,
         @RequestParam(value = "screening_id", required = false)
-        String screening_id
+        String screeningId
     ) {
         Claims allClaims = new DefaultAuthHeader(ppHeaders).token().claims();
 
