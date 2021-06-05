@@ -30,15 +30,21 @@ public class TicketRepositoryImpl {
     }
 
     @SuppressWarnings("unchecked")
-	public List<Ticket> findByUser(Long userId) {
+    public List<Ticket> findByUserAndScreening(Long userId, Long screeningId) {
         String sql = "SELECT t.id, t.seat_number, t.screening_id, " +
                      "t.created_at, t.updated_at " +
                      "FROM bookings b " +
                      "JOIN tickets t " +
                      "ON t.booking_id = b.id " +
                      "WHERE b.user_id = :usr_id";
+        if (screeningId > 0) {
+            sql += " AND t.screening_id = :scr_id";
+        }
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("usr_id", userId);
+        if (screeningId > 0) {
+            query.setParameter("scr_id", screeningId);
+        }
         List<Object[]> tickets = (List<Object[]>) query.getResultList();
         return tickets
             .stream()
