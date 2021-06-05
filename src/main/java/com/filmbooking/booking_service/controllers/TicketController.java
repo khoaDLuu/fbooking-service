@@ -13,7 +13,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import io.swagger.annotations.ApiOperation;
 
-import com.filmbooking.booking_service.errors_handling.TicketNotFoundException;
 import com.filmbooking.booking_service.models.Ticket;
 import com.filmbooking.booking_service.repositories.TicketRepository;
 import com.filmbooking.booking_service.reqres.ResponseWrapper;
@@ -93,7 +92,10 @@ class TicketController {
 
         return new ResponseWrapperSingle<Ticket>(
             repository.findById(id).orElseThrow(
-                () -> new TicketNotFoundException(id)
+                () -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Ticket not found, ticket id = " + id
+                )
             )
         );
     }
@@ -160,13 +162,20 @@ class TicketController {
         }
 
         Ticket onlyTicket = repository.findById(id).orElseThrow(
-            () -> new TicketNotFoundException(id)
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Ticket not found, ticket id = " + id
+            )
         );
 
         if (!onlyTicket.getBooking().getUserId().equals(
             allClaims.requester().id())
         ) {
-            throw new TicketNotFoundException(id);
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Ticket not found, ticket id = " + id +
+                ", user id = " + allClaims.requester().id()
+            );
         }
         return new ResponseWrapperSingle<Ticket>(onlyTicket);
     }

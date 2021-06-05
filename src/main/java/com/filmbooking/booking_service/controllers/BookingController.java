@@ -40,7 +40,6 @@ import org.springframework.web.server.ResponseStatusException;
 import io.swagger.annotations.ApiOperation;
 
 import com.filmbooking.booking_service.errors_handling.ConstraintViolationException;
-import com.filmbooking.booking_service.errors_handling.BookingNotFoundException;
 import com.filmbooking.booking_service.models.Booking;
 import com.filmbooking.booking_service.repositories.BookingRepository;
 import com.filmbooking.booking_service.reqres.PaypalRequest;
@@ -410,7 +409,10 @@ class BookingController {
 
         return new ResponseWrapperSingle<Booking>(
             repository.findById(id).orElseThrow(
-                () -> new BookingNotFoundException(id)
+                () -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Booking not found, booking id = " + id
+                )
             )
         );
     }
@@ -466,10 +468,17 @@ class BookingController {
         }
 
         Booking onlyBooking = repository.findById(id).orElseThrow(
-            () -> new BookingNotFoundException(id)
+            () -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Booking not found, booking id = " + id
+            )
         );
         if (!onlyBooking.getUserId().equals(allClaims.requester().id())) {
-            throw new BookingNotFoundException(id);
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Booking not found, booking id = " + id +
+                ", user id = " + allClaims.requester().id()
+            );
         }
         return new ResponseWrapperSingle<Booking>(onlyBooking);
     }
