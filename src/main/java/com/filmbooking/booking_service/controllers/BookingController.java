@@ -1,29 +1,14 @@
 package com.filmbooking.booking_service.controllers;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.paypal.http.HttpResponse;
-import com.paypal.orders.AmountWithBreakdown;
-import com.paypal.orders.ApplicationContext;
-import com.paypal.orders.Capture;
-import com.paypal.orders.LinkDescription;
 import com.paypal.orders.Order;
-import com.paypal.orders.OrderRequest;
-import com.paypal.orders.OrdersCaptureRequest;
-import com.paypal.orders.OrdersCreateRequest;
-import com.paypal.orders.OrdersGetRequest;
-import com.paypal.orders.PurchaseUnit;
-import com.paypal.orders.PurchaseUnitRequest;
 
 import org.postgresql.util.PSQLException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,20 +18,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 
 import io.swagger.annotations.ApiOperation;
 
-import com.filmbooking.booking_service.errors_handling.ConstraintViolationException;
+import com.filmbooking.booking_service.errors_handling.PaypalTransactionException;
+import com.filmbooking.booking_service.errors_handling.QrSendingFailure;
 import com.filmbooking.booking_service.models.Booking;
 import com.filmbooking.booking_service.repositories.BookingRepository;
 import com.filmbooking.booking_service.reqres.PaypalRequest;
 import com.filmbooking.booking_service.reqres.PaypalResponse;
 import com.filmbooking.booking_service.reqres.ResponseWrapper;
 import com.filmbooking.booking_service.reqres.ResponseWrapperSingle;
-import com.filmbooking.booking_service.services.PaypalClient;
+import com.filmbooking.booking_service.services.PaypalService;
+import com.filmbooking.booking_service.services.QrSender;
 import com.filmbooking.booking_service.utils.authHeader.AuthHeader;
 import com.filmbooking.booking_service.utils.authHeader.DefaultAuthHeader;
 import com.filmbooking.booking_service.utils.permission.operation.Operation;
@@ -57,48 +42,14 @@ import com.filmbooking.booking_service.utils.user.role.SimpleRole;
 @RestController
 class BookingController {
 
-    @Autowired
-    private PaypalClient paypal;
     private final BookingRepository repository;
 
     BookingController(BookingRepository repository) {
         this.repository = repository;
     }
 
-    private OrderRequest buildRequestBody() {
-        return new OrderRequest();
-    }
-
-    private OrderRequest buildRequestBody(
-        BigDecimal amount,
-        String currency
-    ) {
-        OrderRequest orderRequest = new OrderRequest();
-        orderRequest.checkoutPaymentIntent("CAPTURE");
-
-        ApplicationContext applicationContext = new ApplicationContext()
-            .brandName("FILMBOOKING")
-            .landingPage("BILLING");
-        orderRequest.applicationContext(applicationContext);
-
-        List<PurchaseUnitRequest> purchaseUnitRequests =
-            new ArrayList<PurchaseUnitRequest>();
-        PurchaseUnitRequest purchaseUnitRequest = new PurchaseUnitRequest()
-            .referenceId("PUHF")
-            .description("Film Tickets")
-            .softDescriptor("FBT")
-            .amountWithBreakdown(
-                new AmountWithBreakdown()
-                .currencyCode(currency)
-                .value(amount.toString())
-            );
-        purchaseUnitRequests.add(purchaseUnitRequest);
-        orderRequest.purchaseUnits(purchaseUnitRequests);
-        return orderRequest;
-    }
-
     @PostMapping("/bookings/prepare")
-    PaypalResponse createOrder(
+    PaypalResponse prepareOrder(
         @RequestBody PaypalRequest ppReq,
         @RequestHeader HttpHeaders ppHeaders
     ) {
@@ -113,50 +64,8 @@ class BookingController {
             );
         }
 
-        OrdersCreateRequest request = new OrdersCreateRequest();
-        request.prefer("return=representation");
-        request.requestBody(buildRequestBody(
-            ppReq.total(),
-            ppReq.getCurrency()
-        ));
-
         try {
-            // Call PayPal to set up a transaction
-            HttpResponse<Order> resp = this.paypal.client().execute(request);
-
-            if (resp.statusCode() == HttpStatus.CREATED.value()) {
-                // ############## DEBUG ############## //
-                System.out.println("Status Code: " + resp.statusCode());
-                System.out.println("Status: " + resp.result().status());
-                System.out.println("Order ID: " + resp.result().id());
-                System.out.println(
-                    "Intent: " + resp.result().checkoutPaymentIntent()
-                );
-                System.out.println("Links: ");
-                for (LinkDescription link : resp.result().links()) {
-                    System.out.println(
-                        "\t" + link.rel() +
-                        ": " + link.href() +
-                        "\tCall Type: " + link.method()
-                    );
-                }
-                System.out.println(
-                    "Total Amount: "
-                    + resp.result().purchaseUnits().get(0)
-                        .amountWithBreakdown().currencyCode() + " " +
-                        resp.result().purchaseUnits().get(0)
-                        .amountWithBreakdown().value()
-                );
-                // ############## DEBUG ############## //
-            }
-            else {
-                throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to set up Paypal transaction, code " +
-                    resp.statusCode()
-                );
-            }
-
+            HttpResponse<Order> resp = new PaypalService().createOrder(ppReq);
             return new PaypalResponse(
                 resp.result().id(),
                 resp.result().purchaseUnits().get(0)
@@ -164,6 +73,12 @@ class BookingController {
                     resp.result().purchaseUnits().get(0)
                         .amountWithBreakdown().currencyCode(),
                         resp.result().createTime()
+            );
+        }
+        catch (PaypalTransactionException e) {
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                e.getMessage()
             );
         }
         catch (IOException ex) {
@@ -175,7 +90,7 @@ class BookingController {
     }
 
     @PostMapping("/bookings/confirm")
-    Booking approveOrder(
+    Booking confirmOrder(
         @RequestBody Booking booking,
         @RequestHeader HttpHeaders ppHeaders
     ) {
@@ -190,130 +105,51 @@ class BookingController {
             );
         }
 
-        OrdersGetRequest request = new OrdersGetRequest(booking.getOrderId());
-
         try {
-            // Call PayPal to get the transaction
-            HttpResponse<Order> response = paypal.client().execute(request);
-
-            if (response.statusCode() == HttpStatus.OK.value()) {
-                response = this.captureOrder(booking);
-
-                if (response.statusCode() == HttpStatus.CREATED.value()) {
-                    // ############## DEBUG ############## //
-                    System.out.println("Order ID: " + response.result().id());
-                    // ############## DEBUG ############## //
-
-                    this.sendCodeForQR(
-                        booking.getCode(),
-                        ppHeaders.getOrEmpty("Authorization").get(0),
-                        booking.getUserEmail()
-                    );
-
-                    return booking;
-                }
-                else {
-                    throw new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Failed to capture Paypal order, code " +
-                        response.statusCode()
-                    );
-                }
+            Booking verifiedBooking = new PaypalService().approveOrder(booking);
+            verifiedBooking.getTickets().forEach(
+                ticket -> ticket.setBooking(booking)
+            );
+            try {
+                repository.save(booking);
             }
-            else {
-                throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to retrieve Paypal transaction, code " +
-                    response.statusCode()
+            catch (Exception ex) {
+                throw new PSQLException(
+                    ((PSQLException) ex).getServerErrorMessage(),
+                    true
                 );
             }
+            new QrSender().sendCodeForQR(
+                booking.getCode(),
+                ppHeaders.getOrEmpty("Authorization").get(0),
+                booking.getUserEmail()
+            );
+            return verifiedBooking;
         }
-        catch (IOException ex) {
+        catch (PaypalTransactionException e) {
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                e.getMessage()
+            );
+        }
+        catch (IOException e) {
             throw new ResponseStatusException(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Failed to make a request to PayPal to get/capture " +
                 "the transaction"
             );
         }
-    }
-
-    private void sendCodeForQR(String code, String auth, String emailTo) {
-        WebClient apiClient = WebClient.create(
-            System.getenv("QR_MAIL_URL_BASE")
-        );
-        String bodyContent = String.format(
-            "{\"mailFrom\":\"%s\"," +
-            "\"mailTo\":\"%s\"," +
-            "\"embeddedlink\":\"%s?code=%s\"}",
-            System.getenv("EMAIL_DEFAULT"), emailTo,
-            System.getenv("MANAGEMENT_SITE_URL"), code
-        );
-
-        // ############## DEBUG ############## //
-        System.out.println("Body content: " + bodyContent);
-        // ############## DEBUG ############## //
-
-        String res = apiClient.post()
-            .uri(System.getenv("QR_MAIL_URL_PATH"))
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("Authorization", auth)
-            .body(BodyInserters.fromValue(bodyContent))
-            .retrieve()
-            .bodyToMono(String.class)
-            .doOnError(throwable ->
-                System.out.println("Failed for some reason: " + throwable))
-            .onErrorReturn(new String(""))
-            .block();
-        System.out.println("QR sending result: " + res);
-
-        if (res.equals("")) {
+        catch (PSQLException sqlEx) {
             throw new ResponseStatusException(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "Failed to send QR code to mailing service"
+                sqlEx.getMessage()
             );
         }
-    }
-
-    @Transactional
-    public HttpResponse<Order> captureOrder(Booking booking) throws IOException {
-        try {
-            OrdersCaptureRequest request = new OrdersCaptureRequest(booking.getOrderId());
-            request.requestBody(buildRequestBody());
-
-            // Call PayPal to capture an order
-            HttpResponse<Order> response = paypal.client().execute(request);
-
-            if (response.statusCode() == HttpStatus.CREATED.value()) {
-                for (PurchaseUnit purchaseUnit : response.result().purchaseUnits()) {
-                    purchaseUnit.amountWithBreakdown();
-                    for (Capture capture : purchaseUnit.payments().captures()) {
-                        // ############## DEBUG ############## //
-                        System.out.println(
-                            "CaptureOrder - id: " +
-                            capture.id()
-                        );
-                        System.out.println(
-                            "CaptureOrder - amount: " +
-                            Double.parseDouble(capture.amount().value())
-                        );
-                        // ############## DEBUG ############## //
-                    }
-                }
-                booking.getTickets().forEach(ticket -> ticket.setBooking(booking));
-                try {
-                    repository.save(booking);
-                }
-                catch (Exception ex) {
-                    throw new PSQLException(
-                        ((PSQLException) ex).getServerErrorMessage(),
-                        true
-                    );
-                }
-            }
-            return response;
-        }
-        catch (PSQLException sqlEx) {
-            throw new ConstraintViolationException(sqlEx.getMessage());
+        catch (QrSendingFailure e) {
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                e.getMessage()
+            );
         }
     }
 
