@@ -1,4 +1,4 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;

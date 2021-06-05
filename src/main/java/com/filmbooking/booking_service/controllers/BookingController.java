@@ -1,4 +1,4 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.controllers;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -39,8 +39,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 import io.swagger.annotations.ApiOperation;
 
+import com.filmbooking.booking_service.errors_handling.ConstraintViolationException;
+import com.filmbooking.booking_service.errors_handling.BookingNotFoundException;
 import com.filmbooking.booking_service.models.Booking;
 import com.filmbooking.booking_service.repositories.BookingRepository;
+import com.filmbooking.booking_service.reqres.PaypalRequest;
+import com.filmbooking.booking_service.reqres.PaypalResponse;
+import com.filmbooking.booking_service.reqres.ResponseWrapper;
+import com.filmbooking.booking_service.reqres.ResponseWrapperSingle;
+import com.filmbooking.booking_service.services.PaypalClient;
 import com.filmbooking.booking_service.utils.authHeader.AuthHeader;
 import com.filmbooking.booking_service.utils.authHeader.DefaultAuthHeader;
 import com.filmbooking.booking_service.utils.permission.operation.Operation;

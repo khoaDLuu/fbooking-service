@@ -1,4 +1,4 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.controllers;
 
 import java.util.List;
 
@@ -13,7 +13,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import io.swagger.annotations.ApiOperation;
 
+import com.filmbooking.booking_service.errors_handling.TicketNotFoundException;
 import com.filmbooking.booking_service.models.Ticket;
+import com.filmbooking.booking_service.repositories.TicketRepository;
+import com.filmbooking.booking_service.reqres.ResponseWrapper;
+import com.filmbooking.booking_service.reqres.ResponseWrapperSingle;
 import com.filmbooking.booking_service.utils.authHeader.DefaultAuthHeader;
 import com.filmbooking.booking_service.utils.permission.operation.SimpleOperation;
 import com.filmbooking.booking_service.utils.token.claims.Claims;

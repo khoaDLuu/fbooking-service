@@ -1,9 +1,9 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.errors_handling;
 
 public class ConstraintViolationException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    ConstraintViolationException(String details) {
+    public ConstraintViolationException(String details) {
       super("Violation of DB constraint: " + details);
     }
 }

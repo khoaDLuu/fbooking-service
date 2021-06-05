@@ -1,5 +1,7 @@
 package com.filmbooking.booking_service;
 
+import com.filmbooking.booking_service.config.BSSecurityConfig;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;

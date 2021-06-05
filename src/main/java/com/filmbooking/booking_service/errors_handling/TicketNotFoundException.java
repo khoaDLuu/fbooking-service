@@ -1,4 +1,4 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.errors_handling;
 
 public class TicketNotFoundException extends RuntimeException {
 
@@ -7,7 +7,7 @@ public class TicketNotFoundException extends RuntimeException {
      */
     private static final long serialVersionUID = 1L;
 
-    TicketNotFoundException(Long id) {
+    public TicketNotFoundException(Long id) {
       super("Could not find ticket " + id);
     }
 }

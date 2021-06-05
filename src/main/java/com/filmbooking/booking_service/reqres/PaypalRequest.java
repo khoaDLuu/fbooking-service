@@ -1,4 +1,4 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.reqres;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -87,7 +87,7 @@ class TicketDetails {
     private String seatNumber;
     private BigDecimal price;
 
-    TicketDetails(String seatNumber, BigDecimal price) {
+    public TicketDetails(String seatNumber, BigDecimal price) {
         this.seatNumber = seatNumber;
         this.price = price;
     }

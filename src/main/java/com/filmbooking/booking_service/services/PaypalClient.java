@@ -1,4 +1,4 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.services;
 
 import java.util.concurrent.TimeUnit;
 

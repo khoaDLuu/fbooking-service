@@ -7,10 +7,10 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import com.filmbooking.booking_service.ResponseWrapper;
-import com.filmbooking.booking_service.ResponseWrapperSingle;
 import com.filmbooking.booking_service.models.Revenue;
 import com.filmbooking.booking_service.repositories.RevenueRepository;
+import com.filmbooking.booking_service.reqres.ResponseWrapper;
+import com.filmbooking.booking_service.reqres.ResponseWrapperSingle;
 import com.filmbooking.booking_service.utils.authHeader.DefaultAuthHeader;
 import com.filmbooking.booking_service.utils.permission.operation.SimpleOperation;
 

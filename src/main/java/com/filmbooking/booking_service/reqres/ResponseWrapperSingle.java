@@ -1,4 +1,4 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.reqres;
 
 public class ResponseWrapperSingle<T> {
     private T data;

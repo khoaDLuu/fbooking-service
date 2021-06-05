@@ -1,4 +1,4 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.db;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

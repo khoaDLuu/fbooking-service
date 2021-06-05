@@ -1,4 +1,4 @@
-package com.filmbooking.booking_service;
+package com.filmbooking.booking_service.repositories;
 
 import java.time.Instant;
 import java.util.List;
