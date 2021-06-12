@@ -42,6 +42,8 @@ import com.filmbooking.booking_service.utils.user.role.SimpleRole;
 @RestController
 class BookingController {
 
+    @Autowired
+    private PaypalService paypalService;
     private final BookingRepository repository;
 
     BookingController(BookingRepository repository) {
@@ -65,7 +67,7 @@ class BookingController {
         }
 
         try {
-            HttpResponse<Order> resp = new PaypalService().createOrder(ppReq);
+            HttpResponse<Order> resp = this.paypalService.createOrder(ppReq);
             return new PaypalResponse(
                 resp.result().id(),
                 resp.result().purchaseUnits().get(0)
@@ -106,7 +108,7 @@ class BookingController {
         }
 
         try {
-            Booking verifiedBooking = new PaypalService().approveOrder(booking);
+            Booking verifiedBooking = this.paypalService.approveOrder(booking);
             verifiedBooking.getTickets().forEach(
                 ticket -> ticket.setBooking(booking)
             );
