@@ -7,6 +7,7 @@ import com.paypal.http.HttpResponse;
 import com.paypal.orders.Order;
 
 import org.postgresql.util.PSQLException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
