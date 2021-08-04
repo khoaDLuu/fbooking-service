@@ -53,13 +53,6 @@ class TicketController {
             );
         }
 
-        if (allClaims.requester().roles().sameAs(new SimpleRole("ROLE_GUEST"))) {
-            throw new ResponseStatusException(
-                HttpStatus.METHOD_NOT_ALLOWED,
-                "Guest users are not allowed to view all tickets"
-            );
-        }
-
         try {
             List<Ticket> unwrapped = null;
             if (screeningId != null) {
